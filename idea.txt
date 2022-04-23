@@ -1,0 +1,38 @@
+- totally inspired by cargo
+
+- requires to be placed in goldsrc package root folder
+- requires bunnymodXT folder
+- requires half life dir to be in Half-Life
+
+> cfg
+	- init-git: initialzes a git repo on new projects
+
+> commands
+- install
+	- do we dl the "special dll" for the simulator client?
+	- creates a tas folder if it doesn't exist
+	- creates a default cfg file
+
+- new <project name> <game name> <copy for sim client>
+	- if cfg file doesn't exist, it will tell the user to run install
+	- creates a folder with project name
+	- initializes a git repo by default but --no-git will prevent that
+		- gitignore
+			- batch files
+	- creates a hook with the hardlink script
+	- if game name is set and game has cl_dlls/client.dll
+		- if copying for sim client, copy the whole folder of the mod and create a "new" mod just for the simulator client without the client dll
+		- if not copying for sim client create disable_vanilla_game enable_vanilla_game batch file for client dll resets
+	- creates a run_game batch file
+		- if game name is present, will run hl with that game in argument
+		- if game name is empty, will run vanilla hl
+		- if game name doesn't exist as a folder, error
+		- detects if rinput exists, and puts that in the thing to run, but has rinput running commented out if it doesn't exist
+		- if copy for sim client is true, running the simulator client with this will run the other game
+	- create link_hltas_files script
+	
+- init <folder name>
+	- initializes stuff like above but on an existing folder
+
+- games
+	- tries to list all games present

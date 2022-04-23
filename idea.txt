@@ -3,20 +3,26 @@
 - requires to be placed in goldsrc package root folder
 - requires bunnymodXT folder
 - requires half life dir to be in Half-Life
+- requires half life dir's steamapi.dll to be the original dll
 
 > cfg
-	- init-git: initialzes a git repo on new projects
+	- init-git: if git repo initializes on new projects
+	- project-dir: projects dir name
+	- ignore game dirs: dirs to ignore as a game
+	- tas-cfgs-to-userconfig-on-new-project: ye
 
 > commands
-- install
-	- do we dl the "special dll" for the simulator client?
-	- creates a tas folder if it doesn't exist
+- install <projects dir name>
+	- dl the "special dll" for the simulator client, place in half-life dir as "sim.dll"
+	- copy steamapi dll as "reset.dll" in half-life dir
+	- creates a tas project folder if it doesn't exist
 	- creates a default cfg file
 
-- new <project name> <game name> <copy for sim client>
+- new <project name> <game name> <copy game dir for sim client>
 	- if cfg file doesn't exist, it will tell the user to run install
 	- creates a folder with project name
-	- initializes a git repo by default but --no-git will prevent that
+	- initializes a git repo with the cfg
+		- --no-git will prevent that, and --init-git will force create
 		- gitignore
 			- batch files
 	- creates a hook with the hardlink script
@@ -25,14 +31,39 @@
 		- if not copying for sim client create disable_vanilla_game enable_vanilla_game batch file for client dll resets
 	- creates a run_game batch file
 		- if game name is present, will run hl with that game in argument
-		- if game name is empty, will run vanilla hl
+		- if game name is none, will run vanilla hl
 		- if game name doesn't exist as a folder, error
 		- detects if rinput exists, and puts that in the thing to run, but has rinput running commented out if it doesn't exist
 		- if copy for sim client is true, running the simulator client with this will run the other game
-	- create link_hltas_files script
+		
+		> run_game args
+			- sim - run game as simulator client
+			- low - run game in low settings
+			- no-vanilla - if game has client dll, run game without it
+			- record <width> <height> - run game for recording
+			- no-bxt - no bxt
+			- run-script <name> - tries to run script soon as it opens
+			- params - parameters to pass to half life
+	- create link_hltas_files script for easy hard linking
 	
-- init <folder name>
-	- initializes stuff like above but on an existing folder
+	- if cfg files exist, modify usercfg to include it, --no-hltas-cfgs to not, --hltas-cfgs to do
+	
+- init <folder name> <game name> <copy game dir for sim client>
+	- same as new but on an existing folder
 
 - games
-	- tries to list all games present
+	- list all games present
+	- ignore folder .bxt-ipc: its in the cfg
+	
+- gen-cfgs <minimum cfgs> <no userconfig change>
+	- generates config files to help you tas
+	
+	- files: hltas.cfg, ingame.cfg, record.cfg, editor.cfg, cam.cfg
+	
+	- if minimum cfgs, will create the minimum cfg files, making some keybinds
+	- uses files from the cfgs folder in package, it will place the cfg files from a repo if files not present
+	
+	- if not no userconfig change is set, it will go through all games and add exec hltas.cfg to userconfig.cfg
+	- also for half-life folder one too, idk if it exists in all packages though
+	
+	- hardlinks all files from cfgs to game folders

@@ -13,7 +13,7 @@
 
 > commands
 - install <projects dir name>
-	- dl the "special dll" for the simulator client, place in half-life dir as "sim.dll"
+	- use the "sim.dll" steam_api.dll placed in the root folder for simulator client
 	- copy steamapi dll as "reset.dll" in half-life dir
 	- creates a tas project folder if it doesn't exist
 	- creates a default cfg file

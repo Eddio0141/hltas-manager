@@ -1,5 +1,4 @@
 pub mod cfg;
-pub mod files;
 pub mod helper;
 
 use std::fs::{self};
@@ -83,11 +82,20 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Install { projects_dir_name } => {
             // verifying if the half-life directory exists
             let half_life_dir = helper::half_life_dir()?;
+            let root_dir = root_dir()?;
 
-            // download the simulator client steam_api.dll
+            // copy the simulator client steam_api.dll (sim.dll)
             // TODO thread for this and the other stuff?
-            files::dl_sim_steam_api_dll(half_life_dir.join("sim.dll"))
-                .context("Failed to download the simulator client steam_api.dll")?;
+            let base_sim_client_dll_path = root_dir.join("sim.dll");
+
+            if base_sim_client_dll_path.is_file() {
+                let sim_client_dll_path = half_life_dir.join("sim.dll");
+
+                fs::copy(base_sim_client_dll_path, sim_client_dll_path)
+                    .context("Failed to copy sim.dll")?;
+            } else {
+                bail!("sim.dll not found in the root directory");
+            }
 
             // TODO check other verifications
 
@@ -114,7 +122,6 @@ pub fn run(cli: Cli) -> Result<()> {
             let cfg = cfg;
 
             // create project dir if it doesn't exist
-            let root_dir = root_dir()?;
             let projects_dir = root_dir.join(&cfg.project_dir_name);
 
             if !projects_dir.is_dir() {

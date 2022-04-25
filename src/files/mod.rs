@@ -50,11 +50,15 @@ where
         bail!("{} is not a directory", path.display());
     }
 
-    let files = vec![("hltas", HLTAS_CFG)];
+    let files = vec![
+        ("hltas.cfg", HLTAS_CFG),
+        ("ingame.cfg", INGAME_CFG),
+        ("record.cfg", RECORD_CFG),
+        ("editor.cfg", EDITOR_CFG),
+        ("cam.cfg", CAM_CFG),
+    ];
 
     for (file_name, cfg_file) in files {
-        let file_name = format!("{}.cfg", file_name);
-
         let mut file = File::create(path.join(&file_name))?;
         file.write_all(cfg_file).with_context(|| {
             format!(
@@ -63,6 +67,44 @@ where
                 path.display()
             )
         })?;
+    }
+
+    Ok(())
+}
+
+pub fn hard_link_cfgs<P>(cfgs_dir: P, dest_dir: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let cfgs_dir = cfgs_dir.as_ref();
+    let dest_dir = dest_dir.as_ref();
+
+    let files = vec![
+        "hltas.cfg",
+        "ingame.cfg",
+        "record.cfg",
+        "editor.cfg",
+        "cam.cfg",
+    ];
+
+    for file_name in files {
+        let src_path = cfgs_dir.join(file_name);
+        let dest_path = dest_dir.join(file_name);
+
+        if !src_path.exists() {
+            bail!("cfg in {} does not exist", &src_path.display());
+        }
+
+        // ignore operation if the file already exists
+        if !dest_path.exists() {
+            fs::hard_link(&src_path, &dest_path).with_context(|| {
+                format!(
+                    "Failed to hard-link {} to {}",
+                    &src_path.display(),
+                    &dest_path.display()
+                )
+            })?;
+        }
     }
 
     Ok(())
@@ -116,10 +158,15 @@ where
         bail!("{} is not a directory", dir.display());
     }
 
+    let half_life_dir = half_life_dir
+        .as_ref()
+        .file_name()
+        .context("Failed to get half-life dir")?;
+
     let enable_sim_client =
-        ENABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.as_ref().to_string_lossy());
+        ENABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.to_string_lossy());
     let disable_sim_client =
-        DISABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.as_ref().to_string_lossy());
+        DISABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.to_string_lossy());
 
     let files = vec![
         ("disable_sim_client.bat", disable_sim_client),
@@ -143,10 +190,13 @@ pub fn write_hltas_linker<P>(dir: P, half_life_dir: P) -> Result<()>
 where
     P: AsRef<Path>,
 {
-    let linker_file = LINK_HLTAS_FILES.replace(
-        "HALF_LIFE_DIR",
-        half_life_dir.as_ref().to_string_lossy().as_ref(),
-    );
+    let half_life_dir = half_life_dir
+        .as_ref()
+        .file_name()
+        .context("Failed to get half-life dir name")?;
+
+    let linker_file =
+        LINK_HLTAS_FILES.replace("HALF_LIFE_DIR", half_life_dir.to_string_lossy().as_ref());
 
     let mut file = File::create(dir.as_ref().join("link_hltas_files.bat"))?;
 

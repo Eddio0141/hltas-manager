@@ -22,7 +22,7 @@
 	- if cfg file doesn't exist, it will tell the user to run install
 	- creates a folder with project name
 	- initializes a git repo with the cfg
-		- --no-git will prevent that, and --init-git will force create
+		- --no-init-git will prevent that, and --init-git will force create
 		- gitignore
 			- batch files
 	- creates a hook with the hardlink script

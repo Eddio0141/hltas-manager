@@ -1,5 +1,5 @@
 use clap::StructOpt;
-use hltas_manager::{run, Cli};
+use hltas_manager::{cli::Cli, run};
 
 fn main() {
     let cli = Cli::parse();

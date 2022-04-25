@@ -53,10 +53,10 @@ pub enum Commands {
         init_git: bool,
         #[clap(long)]
         no_init_git: bool,
-        #[clap(long, conflicts_with = "no-copy-hltas-cfgs")]
-        copy_hltas_cfgs: bool,
+        #[clap(long, conflicts_with = "no-link-hltas-cfgs")]
+        link_hltas_cfgs: bool,
         #[clap(long)]
-        no_copy_hltas_cfgs: bool,
+        no_link_hltas_cfgs: bool,
     },
     /// Initializes a new project in an existing directory.
     ///
@@ -66,7 +66,7 @@ pub enum Commands {
         folder_name: String,
         #[clap(long, short)]
         game_name: Option<String>,
-        // TODO depends on if game_name is set
+        // TODO copy new cmd
         #[clap(long, short)]
         copy_game_dir_for_sim_client: bool,
     },
@@ -153,6 +153,8 @@ pub fn run(cli: Cli) -> Result<()> {
             } else {
                 bail!("steam_api.dll not found in the Half-Life directory");
             }
+
+            // TODO set up cfgs dir
         }
         Commands::New {
             project_name,
@@ -160,8 +162,8 @@ pub fn run(cli: Cli) -> Result<()> {
             copy_game_dir_for_sim_client,
             init_git,
             no_init_git,
-            copy_hltas_cfgs,
-            no_copy_hltas_cfgs,
+            link_hltas_cfgs,
+            no_link_hltas_cfgs,
         } => {
             // TODO check requirements of command before running it
             // load config
@@ -174,6 +176,19 @@ pub fn run(cli: Cli) -> Result<()> {
             let game_name_full = game_name.as_ref().unwrap_or(&cfg.default_game);
             let half_life_dir = helper::half_life_dir()?;
             let game_dir = half_life_dir.join(game_name_full);
+
+            // check if game_name is a valid game
+            // check in cfgs for exlusions
+            if cfg.ignore_games.contains(game_name_full) {
+                bail!("Cannot create project for game '{game_name_full}' because it is in the ignore list\nHelp: remove '{game_name_full}' from 'ignore_games' in the config file");
+            }
+            // if game dir doesn't exist
+            if !game_dir.is_dir() {
+                bail!(
+                    "Game '{game_name_full}' not found in the {} directory",
+                    half_life_dir.file_name().unwrap().to_string_lossy()
+                );
+            }
 
             if project_dir.exists() {
                 bail!("Project folder already exists\nHelp: Use 'init' to initialize a project in an existing folder.");
@@ -225,7 +240,7 @@ pub fn run(cli: Cli) -> Result<()> {
             }
 
             // copy cfgs if needed to
-            if cfg.copy_cfgs_to_new_game {
+            if cfg.link_cfgs_to_new_game {
                 files::write_cfgs(&project_dir)?;
             }
 
@@ -262,7 +277,7 @@ pub fn run(cli: Cli) -> Result<()> {
 
                     // if it exists, copy to the secondary game instance folder, or generate toggle batch files
                     if client_dll_path.is_file() {
-                        match &cfg.no_client_dll_dir_name {
+                        match &cfg.no_client_dll_dir {
                             Some(no_client_dll_dir_name) => {
                                 if no_client_dll_dir_name.is_dir() {
                                     // copy the game dir
@@ -298,18 +313,26 @@ pub fn run(cli: Cli) -> Result<()> {
             // TODO
             // create run_game file
 
-            // copy cfg files on game if it doesn't exist and cfgs needs copying
-            let copy_cfg_files = {
-                if *copy_hltas_cfgs {
+            // link cfg files on game if it doesn't exist and cfgs needs copying
+            let link_cfg_files = {
+                if *link_hltas_cfgs {
                     true
-                } else if *no_copy_hltas_cfgs {
+                } else if *no_link_hltas_cfgs {
                     false
                 } else {
-                    cfg.copy_cfgs_to_new_game
+                    cfg.link_cfgs_to_new_game
                 }
             };
 
-            todo!()
+            if link_cfg_files {
+                match &cfg.cfgs_dir {
+                    Some(cfgs_dir) => {
+                        // hard link cfg files
+                        files::hard_link_cfgs(cfgs_dir, &game_dir)?;
+                    },
+                    None => bail!("Failed to find cfgs directory\nHelp: Run 'init' with '--gen-cfgs <DIR_NAME>' to generate cfgs")
+                }
+            }
         }
         Commands::Init {
             folder_name,

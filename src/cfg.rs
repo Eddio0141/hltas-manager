@@ -12,10 +12,11 @@ use serde::{Deserialize, Serialize};
 pub struct Cfg {
     pub init_git_on_project: bool,
     pub project_dir_name: String,
-    pub ignore_game_dirs: Vec<String>,
-    pub copy_cfgs_to_new_game: bool,
+    pub ignore_games: Vec<String>,
+    pub link_cfgs_to_new_game: bool,
     pub default_game: String,
-    pub no_client_dll_dir_name: Option<PathBuf>,
+    pub no_client_dll_dir: Option<PathBuf>,
+    pub cfgs_dir: Option<PathBuf>,
 }
 
 impl Default for Cfg {
@@ -23,10 +24,11 @@ impl Default for Cfg {
         Self {
             init_git_on_project: true,
             project_dir_name: "tas".to_string(),
-            ignore_game_dirs: vec![".bxt-ipc".to_string()],
-            copy_cfgs_to_new_game: false,
+            ignore_games: vec![".bxt-ipc".to_string()],
+            link_cfgs_to_new_game: false,
             default_game: "valve".to_string(),
-            no_client_dll_dir_name: Some(PathBuf::from("NO_CLIENT_DLL")),
+            no_client_dll_dir: Some(PathBuf::from("NO_CLIENT_DLL")),
+            cfgs_dir: Some(PathBuf::from("cfgs")),
         }
     }
 }

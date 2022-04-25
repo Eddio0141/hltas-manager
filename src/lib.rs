@@ -90,8 +90,8 @@ pub fn run(cli: Cli) -> Result<()> {
             copy_game_dir_for_sim_client,
             init_git,
             no_init_git,
-            link_hltas_cfgs,
-            no_link_hltas_cfgs,
+            copy_hltas_cfgs,
+            no_copy_hltas_cfgs,
         } => {
             // TODO check requirements of command before running it
             // load config
@@ -243,9 +243,9 @@ pub fn run(cli: Cli) -> Result<()> {
 
             // link cfg files on game if it doesn't exist and cfgs needs copying
             let link_cfg_files = {
-                if *link_hltas_cfgs {
+                if *copy_hltas_cfgs {
                     true
-                } else if *no_link_hltas_cfgs {
+                } else if *no_copy_hltas_cfgs {
                     false
                 } else {
                     cfg.link_cfgs_to_new_game

@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{Read, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result};
@@ -12,7 +12,9 @@ pub struct Cfg {
     pub init_git_on_project: bool,
     pub project_dir_name: String,
     pub ignore_game_dirs: Vec<String>,
-    pub copy_cfgs_to_userconfig_on_project_game: bool,
+    pub copy_cfgs_to_new_game: bool,
+    pub default_game: String,
+    pub no_client_dll_dir_name: Option<PathBuf>,
 }
 
 impl Default for Cfg {
@@ -21,7 +23,9 @@ impl Default for Cfg {
             init_git_on_project: true,
             project_dir_name: "tas".to_string(),
             ignore_game_dirs: vec![".bxt-ipc".to_string()],
-            copy_cfgs_to_userconfig_on_project_game: false,
+            copy_cfgs_to_new_game: false,
+            default_game: "valve".to_string(),
+            no_client_dll_dir_name: Some(PathBuf::from("NO_CLIENT_DLL")),
         }
     }
 }

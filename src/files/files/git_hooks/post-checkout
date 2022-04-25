@@ -1,0 +1,18 @@
+#!/bin/bash
+
+bash_dir=$(cd "$(dirname "$0")" && pwd)
+project_dir="$(dirname "$(dirname "$bash_dir")")"
+link_dir="$(dirname "$(dirname "$project_dir")")/Half-Life"
+
+for file in "$project_dir/"*.hltas; do
+	file="$(basename "$file")"
+
+	link_path="$link_dir/$file"
+	file_path="$project_dir/$file"
+
+	if test -f "$link_path"; then
+		rm "$link_path"
+	fi
+
+	ln "$file_path" "$link_path"
+done

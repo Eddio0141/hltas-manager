@@ -116,10 +116,15 @@ where
         bail!("{} is not a directory", dir.display());
     }
 
+    let half_life_dir = half_life_dir
+        .as_ref()
+        .file_name()
+        .context("Failed to get half-life dir")?;
+
     let enable_sim_client =
-        ENABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.as_ref().to_string_lossy());
+        ENABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.to_string_lossy());
     let disable_sim_client =
-        DISABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.as_ref().to_string_lossy());
+        DISABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.to_string_lossy());
 
     let files = vec![
         ("disable_sim_client.bat", disable_sim_client),
@@ -143,10 +148,13 @@ pub fn write_hltas_linker<P>(dir: P, half_life_dir: P) -> Result<()>
 where
     P: AsRef<Path>,
 {
-    let linker_file = LINK_HLTAS_FILES.replace(
-        "HALF_LIFE_DIR",
-        half_life_dir.as_ref().to_string_lossy().as_ref(),
-    );
+    let half_life_dir = half_life_dir
+        .as_ref()
+        .file_name()
+        .context("Failed to get half-life dir name")?;
+
+    let linker_file =
+        LINK_HLTAS_FILES.replace("HALF_LIFE_DIR", half_life_dir.to_string_lossy().as_ref());
 
     let mut file = File::create(dir.as_ref().join("link_hltas_files.bat"))?;
 

@@ -1,5 +1,5 @@
 @echo off
-GAME_DIR
+set "game_dir=GAME_DIR"
 set "client_dll_full=%game_dir%\client.dll"
 
 if exist %client_dll_full% (

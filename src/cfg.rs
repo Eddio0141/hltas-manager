@@ -7,6 +7,7 @@ use std::{
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+// TODO more customizations
 #[derive(Serialize, Deserialize)]
 pub struct Cfg {
     pub init_git_on_project: bool,

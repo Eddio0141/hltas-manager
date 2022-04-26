@@ -11,29 +11,32 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct Cfg {
     pub init_git_on_project: bool,
-    pub project_dir_name: String,
+    pub project_dir: PathBuf,
     pub ignore_games: Vec<String>,
     pub link_cfgs_to_new_game: bool,
     pub default_game: String,
     pub no_client_dll_dir: Option<PathBuf>,
     pub cfgs_dir: Option<PathBuf>,
+    pub half_life_dir: PathBuf,
 }
 
 impl Default for Cfg {
     fn default() -> Self {
         Self {
             init_git_on_project: true,
-            project_dir_name: "tas".to_string(),
+            project_dir: PathBuf::from("tas"),
             ignore_games: vec![".bxt-ipc".to_string()],
             link_cfgs_to_new_game: false,
             default_game: "valve".to_string(),
             no_client_dll_dir: Some(PathBuf::from("NO_CLIENT_DLL")),
             cfgs_dir: Some(PathBuf::from("cfgs")),
+            half_life_dir: PathBuf::from("Half-Life"),
         }
     }
 }
 
 impl Cfg {
+    // TODO those need to use a normal error type
     pub fn load_from_path<P>(path: P) -> Result<Cfg>
     where
         P: AsRef<Path>,

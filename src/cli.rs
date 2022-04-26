@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::*;
 
 #[derive(Parser, Debug)]
@@ -16,7 +18,9 @@ pub enum Commands {
     // TODO verify if all steam_api.dll hash are the same, then remove the first doc comment line
     Install {
         #[clap(long)]
-        projects_dir_name: Option<String>,
+        projects_dir: Option<PathBuf>,
+        #[clap(long)]
+        half_life_dir: Option<PathBuf>,
     },
     /// Create a new project.
     ///

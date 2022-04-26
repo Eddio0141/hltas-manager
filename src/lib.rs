@@ -1,6 +1,6 @@
 pub mod cfg;
 pub mod cli;
-pub mod commands_helper;
+pub mod commands;
 pub mod files;
 pub mod helper;
 
@@ -12,7 +12,6 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 use fs_extra::dir::CopyOptions;
-use helper::root_dir;
 
 use crate::cfg::Cfg;
 use cli::*;
@@ -23,66 +22,11 @@ pub const NAME: &str = env!("CARGO_PKG_NAME");
 
 pub fn run(cli: Cli) -> Result<()> {
     match &cli.command {
-        Commands::Install { projects_dir_name } => {
-            // config path
-            let config_path = helper::cfg_dir()?;
-
-            if !config_path.is_file() {
-                // create the config file
-                Cfg::save_default_to_path(&config_path)?;
-            }
-
-            // load config
-            let mut cfg = Cfg::load_from_path(&config_path)?;
-
-            // save override
-            if let Some(projects_dir_name) = projects_dir_name {
-                cfg.project_dir_name = projects_dir_name.to_owned();
-
-                // save config
-                cfg.save_to_path(&config_path)?;
-            }
-            let cfg = cfg;
-
-            // verifying if the half-life directory exists
-            let half_life_dir = helper::half_life_dir()?;
-            let root_dir = root_dir()?;
-
-            // copy the simulator client steam_api.dll (sim.dll)
-            // TODO thread for this and the other stuff?
-            let base_sim_client_dll_path = root_dir.join("sim.dll");
-
-            if base_sim_client_dll_path.is_file() {
-                let sim_client_dll_path = half_life_dir.join("sim.dll");
-
-                fs::copy(base_sim_client_dll_path, sim_client_dll_path)
-                    .context("Failed to copy sim.dll")?;
-            } else {
-                bail!("sim.dll not found in the root directory");
-            }
-
-            // TODO check other verifications
-
-            // create project dir if it doesn't exist
-            let projects_dir = root_dir.join(&cfg.project_dir_name);
-
-            if !projects_dir.is_dir() {
-                fs::create_dir(&projects_dir).context("Failed to create projects dir")?;
-            }
-
-            // copy default steam_api.dll as reset.dll
-            // TODO steam_api verification?
-            let steamapi_dll_path = half_life_dir.join("steam_api.dll");
-            let reset_dll_path = half_life_dir.join("reset.dll");
-
-            if steamapi_dll_path.is_file() {
-                fs::copy(steamapi_dll_path, reset_dll_path)
-                    .context("Failed to copy steam_api.dll to reset.dll")?;
-            } else {
-                bail!("steam_api.dll not found in the Half-Life directory");
-            }
-
-            // TODO set up cfgs dir
+        Commands::Install {
+            projects_dir,
+            half_life_dir,
+        } => {
+            commands::install(projects_dir, half_life_dir)?;
         }
         Commands::New {
             project_name,
@@ -100,9 +44,9 @@ pub fn run(cli: Cli) -> Result<()> {
 
             // create project dir
             let root_dir = helper::root_dir()?;
-            let project_dir = root_dir.join(cfg.project_dir_name).join(project_name);
+            let project_dir = root_dir.join(&cfg.project_dir).join(project_name);
             let game_name_full = game_name.as_ref().unwrap_or(&cfg.default_game);
-            let half_life_dir = helper::half_life_dir()?;
+            let half_life_dir = &cfg.half_life_dir;
             let game_dir = half_life_dir.join(game_name_full);
 
             // check if game_name is a valid game

@@ -72,9 +72,10 @@ where
     Ok(())
 }
 
-pub fn hard_link_cfgs<P>(cfgs_dir: P, dest_dir: P) -> Result<()>
+pub fn hard_link_cfgs<P, P2>(cfgs_dir: P, dest_dir: P2) -> Result<()>
 where
     P: AsRef<Path>,
+    P2: AsRef<Path>,
 {
     let cfgs_dir = cfgs_dir.as_ref();
     let dest_dir = dest_dir.as_ref();
@@ -113,9 +114,10 @@ where
 pub const ENABLE_VANILLA_GAME: &str = include_str!("./files/bat/enable_vanilla_game.bat");
 pub const DISABLE_VANILLA_GAME: &str = include_str!("./files/bat/disable_vanilla_game.bat");
 
-pub fn write_toggle_vanilla_game<P>(path: P, game_dir: P) -> Result<()>
+pub fn write_toggle_vanilla_game<P, P2>(path: P, game_dir: P2) -> Result<()>
 where
     P: AsRef<Path>,
+    P2: AsRef<Path>,
 {
     let path = path.as_ref();
 
@@ -148,9 +150,10 @@ where
 pub const ENABLE_SIM_CLIENT: &str = include_str!("./files/bat/enable_sim_client.bat");
 pub const DISABLE_SIM_CLIENT: &str = include_str!("./files/bat/disable_sim_client.bat");
 
-pub fn write_toggle_sim_client<P>(dir: P, half_life_dir: P) -> Result<()>
+pub fn write_toggle_sim_client<P, P2>(dir: P, half_life_dir: P2) -> Result<()>
 where
     P: AsRef<Path>,
+    P2: AsRef<Path>,
 {
     let dir = dir.as_ref();
 
@@ -186,9 +189,10 @@ where
 
 pub const LINK_HLTAS_FILES: &str = include_str!("./files/bat/link_hltas_files.bat");
 
-pub fn write_hltas_linker<P>(dir: P, half_life_dir: P) -> Result<()>
+pub fn write_hltas_linker<P, P2>(dir: P, half_life_dir: P2) -> Result<()>
 where
     P: AsRef<Path>,
+    P2: AsRef<Path>,
 {
     let half_life_dir = half_life_dir
         .as_ref()

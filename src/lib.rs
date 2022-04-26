@@ -215,5 +215,5 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Games => todo!(),
     }
 
-    todo!()
+    Ok(())
 }

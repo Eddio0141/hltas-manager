@@ -29,8 +29,8 @@ pub fn install(
     )?;
 
     // paths
-    let hl_dir = &cfg.half_life_dir;
     let root_dir = root_dir()?;
+    let hl_dir = root_dir.join(&cfg.half_life_dir);
     let projects_dir = root_dir.join(&cfg.project_dir);
     let no_client_dll_dir = cfg.no_client_dll_dir.map(|dir| root_dir.join(dir));
     let sim_dll = "sim.dll";
@@ -38,7 +38,7 @@ pub fn install(
     let steam_api_dll = "steam_api.dll";
     let steam_api_dll_path = hl_dir.join(steam_api_dll);
     let reset_dll_path = hl_dir.join("reset.dll");
-    let cfgs_dir = &cfg.cfgs_dir;
+    let cfgs_dir = &cfg.cfgs_dir.map(|dir| root_dir.join(dir));
 
     // verifying if the half-life directory exists
     if !hl_dir.is_dir() {
@@ -69,23 +69,32 @@ pub fn install(
 
     // copy half life directory if needs to be copied
     if let Some(no_client_dll_dir) = &no_client_dll_dir {
-        // TODO don't copy games in ignore list and exclude from copying here
-        fs_extra::dir::copy(
-            hl_dir,
-            no_client_dll_dir,
-            &CopyOptions {
-                overwrite: true,
-                ..Default::default()
-            },
-        )
-        .context("Failed to copy half-life directory")?;
+        if !no_client_dll_dir.is_dir() {
+            // TODO don't copy games in ignore list and exclude from copying here
+            fs::create_dir(&no_client_dll_dir).context("Failed to create second game folder")?;
+            fs_extra::dir::copy(
+                &hl_dir,
+                no_client_dll_dir,
+                &CopyOptions {
+                    overwrite: true,
+                    ..Default::default()
+                },
+            )
+            .with_context(|| {
+                format!(
+                    "Failed to copy half-life directory from {} to {}",
+                    hl_dir.display(),
+                    no_client_dll_dir.display()
+                )
+            })?;
 
-        // copy the simulator dll to the second half-life directory's steam_api.dll
-        fs::copy(
-            &base_sim_client_dll_path,
-            &no_client_dll_dir.join(steam_api_dll),
-        )
-        .context("Failed to copy simulator dll to the second half-life directory")?;
+            // copy the simulator dll to the second half-life directory's steam_api.dll
+            fs::copy(
+                &base_sim_client_dll_path,
+                &no_client_dll_dir.join(steam_api_dll),
+            )
+            .context("Failed to copy simulator dll to the second half-life directory")?;
+        }
     }
 
     // copy default steam_api.dll as reset.dll

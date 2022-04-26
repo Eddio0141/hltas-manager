@@ -47,7 +47,7 @@ where
     let path = path.as_ref();
 
     if !path.is_dir() {
-        bail!("{} is not a directory", path.display());
+        fs::create_dir_all(path).context("Failed to create cfg dir")?;
     }
 
     let files = vec![

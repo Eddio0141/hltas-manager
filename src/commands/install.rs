@@ -50,6 +50,7 @@ pub fn install(
     }
 
     // verify if steam_api.dll hash is matching
+    // TODO skip steam api stuff if not matching and warn user
     let steam_api_dll_hash = helper::sha_256_file(&steam_api_dll_path)?;
     // TODO original hash
     dbg!(&steam_api_dll_hash);
@@ -77,6 +78,7 @@ pub fn install(
                 no_client_dll_dir,
                 &CopyOptions {
                     overwrite: true,
+                    content_only: true,
                     ..Default::default()
                 },
             )

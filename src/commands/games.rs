@@ -6,14 +6,23 @@ pub fn games<P>(half_life_dir: P) -> Result<()>
 where
     P: AsRef<Path>,
 {
-    games_in_dir(half_life_dir)
+    let games = games_in_dir(half_life_dir)?;
+
+    for game in games {
+        println!("{}", game);
+    }
+
+    Ok(())
 }
 
-pub fn games_in_dir<P>(dir: P) -> Result<()>
+pub fn games_in_dir<P>(dir: P) -> Result<Vec<String>>
 where
     P: AsRef<Path>,
 {
+    // TODO return references??
     let dir = dir.as_ref();
+
+    let mut games = Vec::new();
 
     for entry in fs::read_dir(dir).context("Failed to read directory")? {
         let entry = entry.context("Failed to read directory")?;
@@ -21,11 +30,11 @@ where
 
         if path.is_dir() && is_dir_game(&path) {
             let name = path.file_name().unwrap();
-            println!("{}", name.to_string_lossy());
+            games.push(name.to_string_lossy().to_string());
         }
     }
 
-    Ok(())
+    Ok(games)
 }
 
 const HD_GAME: &str = "_hd";

@@ -25,8 +25,9 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Install {
             projects_dir,
             half_life_dir,
+            minimum_cfgs,
         } => {
-            commands::install(projects_dir, half_life_dir)?;
+            commands::install(projects_dir, half_life_dir, *minimum_cfgs)?;
         }
         Commands::New {
             project_name,
@@ -111,10 +112,10 @@ pub fn run(cli: Cli) -> Result<()> {
                     .context("Failed to write to .gitignore")?;
             }
 
-            // copy cfgs if needed to
-            if cfg.link_cfgs_to_new_game {
-                files::write_cfgs(&project_dir)?;
-            }
+            // link cfgs if needed to
+            // if cfg.link_cfgs_to_new_game {
+            //     files::hard_link_cfgs(&project_dir)?;
+            // }
 
             // TODO do this process in the install command, since the whole dir is copied
             // let client_dll_path = game_dir.join("cl_dlls").join("client.dll");
@@ -212,10 +213,6 @@ pub fn run(cli: Cli) -> Result<()> {
             copy_game_dir_for_sim_client,
         } => todo!(),
         Commands::Games => todo!(),
-        Commands::GenCfgs {
-            minimum_cfgs,
-            no_userconfig_change,
-        } => todo!(),
     }
 
     todo!()

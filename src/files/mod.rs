@@ -40,7 +40,7 @@ pub const RECORD_CFG: &[u8] = include_bytes!("./files/cfgs/record.cfg");
 pub const EDITOR_CFG: &[u8] = include_bytes!("./files/cfgs/editor.cfg");
 pub const CAM_CFG: &[u8] = include_bytes!("./files/cfgs/cam.cfg");
 
-pub fn write_cfgs<P>(path: P) -> Result<()>
+pub fn write_cfgs<P>(path: P, minimum: bool) -> Result<()>
 where
     P: AsRef<Path>,
 {

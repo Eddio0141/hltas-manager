@@ -15,12 +15,18 @@ pub enum Commands {
     /// - Can be used again to verify if the files are already installed.
     /// - Requires the 'steamapi.dll' file to be the default dll.
     /// - Needs to be run before the tool can be used.
-    // TODO verify if all steam_api.dll hash are the same, then remove the first doc comment line
+    ///
+    /// - Creates the cfg files 'hltas.cfg', 'ingame.cfg', 'record.cfg', 'editor.cfg' and 'cam.cfg'.
+    /// - These files will create keybinds for you to use while TASing, unless the 'minimum_cfgs' flag is set.
+    /// - Read the comment in the config file for more information on what each one does.
+    /// - If the files are already present in 'cfgs/' they will be used instead of creating new ones.
     Install {
         #[clap(long)]
         projects_dir: Option<PathBuf>,
         #[clap(long)]
         half_life_dir: Option<PathBuf>,
+        #[clap(long)]
+        minimum_cfgs: bool,
     },
     /// Create a new project.
     ///
@@ -61,16 +67,4 @@ pub enum Commands {
     /// - Able to set exclusions in the config file.
     // TODO auto detect if its a game or unrelated dir
     Games,
-    /// Generates the .cfg files for TASing.
-    ///
-    /// - Creates the cfg files 'hltas.cfg', 'ingame.cfg', 'record.cfg', 'editor.cfg' and 'cam.cfg'.
-    /// - These files will create keybinds for you to use while TASing, unless the 'minimum_cfgs' flag is set.
-    /// - Read the comment in the config file for more information on what each one does.
-    /// - If the files are already present in 'cfgs/' they will be used instead of creating new ones.
-    GenCfgs {
-        #[clap(long)]
-        minimum_cfgs: bool,
-        #[clap(long)]
-        no_userconfig_change: bool,
-    },
 }

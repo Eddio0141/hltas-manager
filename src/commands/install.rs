@@ -9,10 +9,15 @@ use fs_extra::dir::CopyOptions;
 
 use crate::{
     cfg::Cfg,
+    files,
     helper::{self, root_dir},
 };
 
-pub fn install(projects_dir: &Option<PathBuf>, half_life_dir: &Option<PathBuf>) -> Result<()> {
+pub fn install(
+    projects_dir: &Option<PathBuf>,
+    half_life_dir: &Option<PathBuf>,
+    minimum_cfgs: bool,
+) -> Result<()> {
     // config
     let config_path = helper::cfg_dir()?;
     let cfg = cfg_file_set_up(
@@ -33,6 +38,7 @@ pub fn install(projects_dir: &Option<PathBuf>, half_life_dir: &Option<PathBuf>) 
     let steam_api_dll = "steam_api.dll";
     let steam_api_dll_path = hl_dir.join(steam_api_dll);
     let reset_dll_path = hl_dir.join("reset.dll");
+    let cfgs_dir = &cfg.cfgs_dir;
 
     // verifying if the half-life directory exists
     if !hl_dir.is_dir() {
@@ -121,7 +127,11 @@ pub fn install(projects_dir: &Option<PathBuf>, half_life_dir: &Option<PathBuf>) 
         Err(_) => bail!("Failed to copy steam_api.dll"),
     };
 
-    // TODO set up cfgs dir
+    // write cfgs dir
+    if let Some(cfgs_dir) = cfgs_dir {
+        files::write_cfgs(cfgs_dir, minimum_cfgs)?;
+    }
+
     Ok(())
 }
 

@@ -12,7 +12,6 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 use fs_extra::dir::CopyOptions;
-use helper::root_dir;
 
 use crate::cfg::Cfg;
 use cli::*;

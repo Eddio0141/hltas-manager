@@ -181,7 +181,7 @@ pub fn run(cli: Cli) -> Result<()> {
             }
 
             // create linker batch file
-            files::write_hltas_linker(&project_dir, &half_life_dir)?;
+            files::write_hltas_linker(&project_dir, half_life_dir)?;
 
             // TODO
             // create run_game file

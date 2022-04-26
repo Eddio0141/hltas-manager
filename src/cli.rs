@@ -36,17 +36,12 @@ pub enum Commands {
         project_name: String,
         #[clap(long, short)]
         game_name: Option<String>,
-        // TODO depends on if game_name is set
         #[clap(long, short)]
         copy_game_dir_for_sim_client: bool,
         #[clap(long, conflicts_with = "no-init-git")]
         init_git: bool,
         #[clap(long)]
         no_init_git: bool,
-        #[clap(long, conflicts_with = "no-copy-hltas-cfgs")]
-        copy_hltas_cfgs: bool,
-        #[clap(long)]
-        no_copy_hltas_cfgs: bool,
     },
     /// Initializes a new project in an existing directory.
     ///

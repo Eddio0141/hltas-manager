@@ -25,7 +25,7 @@ impl Default for Cfg {
         Self {
             init_git_on_project: true,
             project_dir: PathBuf::from("tas"),
-            ignore_games: vec![".bxt-ipc".to_string()],
+            ignore_games: Vec::new(),
             link_cfgs_to_new_game: false,
             default_game: "valve".to_string(),
             no_client_dll_dir: Some(PathBuf::from("NO_CLIENT_DLL")),

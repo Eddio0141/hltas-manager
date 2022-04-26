@@ -7,3 +7,4 @@ pub mod helper;
 // TODO other os support
 
 pub const NAME: &str = env!("CARGO_PKG_NAME");
+pub const DEFAULT_GAME: &str = "valve";

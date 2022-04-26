@@ -11,6 +11,7 @@ use crate::{
     cfg::Cfg,
     files,
     helper::{self, root_dir},
+    DEFAULT_GAME,
 };
 
 pub const STEAM_API_DLL_HASH: &[u8] = &[
@@ -37,13 +38,11 @@ pub fn install(
     let root_dir = root_dir()?;
     let hl_dir = root_dir.join(&cfg.half_life_dir);
     let projects_dir = root_dir.join(&cfg.project_dir);
-    let no_client_dll_dir = cfg.no_client_dll_dir.map(|dir| root_dir.join(dir));
     let sim_dll = "sim.dll";
     let base_sim_client_dll_path = root_dir.join(sim_dll);
     let steam_api_dll = "steam_api.dll";
     let steam_api_dll_path = hl_dir.join(steam_api_dll);
     let reset_dll_path = hl_dir.join("reset.dll");
-    let cfgs_dir = &cfg.cfgs_dir.map(|dir| root_dir.join(dir));
 
     // verifying if the half-life directory exists
     if !hl_dir.is_dir() {
@@ -58,9 +57,13 @@ pub fn install(
     let steam_api_dll_hash = helper::sha_256_file(&steam_api_dll_path)?;
 
     if STEAM_API_DLL_HASH != steam_api_dll_hash.as_slice() {
+        // check if reset.dll exists and that hash is matching
         // TODO skip steam api stuff if not matching and warn user
         // TODO but if the files reset.dll and sim.dll exists with the same hash, then we can skip this
     }
+
+    // hard link cfgs
+    cfgs_link(&root_dir, &cfg, minimum_cfgs)?;
 
     // create projects dir if it doesn't exist
     let projects_dir_create_worker = if !projects_dir.is_dir() {
@@ -76,13 +79,15 @@ pub fn install(
     };
 
     // copy half life directory if needs to be copied
-    if let Some(no_client_dll_dir) = &no_client_dll_dir {
+    if let Some(no_client_dll_dir) = &cfg.no_client_dll_dir {
+        let no_client_dll_dir = root_dir.join(no_client_dll_dir);
+
         if !no_client_dll_dir.is_dir() {
             // TODO don't copy games in ignore list and exclude from copying here
             fs::create_dir(&no_client_dll_dir).context("Failed to create second game folder")?;
             fs_extra::dir::copy(
                 &hl_dir,
-                no_client_dll_dir,
+                &no_client_dll_dir,
                 &CopyOptions {
                     overwrite: true,
                     content_only: true,
@@ -145,20 +150,15 @@ pub fn install(
         Err(_) => bail!("Failed to copy steam_api.dll"),
     };
 
-    // write cfgs dir
-    if let Some(cfgs_dir) = cfgs_dir {
-        files::write_cfgs(cfgs_dir, minimum_cfgs)?;
-    }
-
     Ok(())
 }
 
-pub struct CfgOverrides<'a> {
-    pub projects_dir_name: Option<&'a Path>,
-    pub half_life_dir: Option<&'a Path>,
+struct CfgOverrides<'a> {
+    projects_dir_name: Option<&'a Path>,
+    half_life_dir: Option<&'a Path>,
 }
 
-pub fn cfg_file_set_up<P>(config_path: P, cfg_overrides: CfgOverrides) -> Result<Cfg>
+fn cfg_file_set_up<P>(config_path: P, cfg_overrides: CfgOverrides) -> Result<Cfg>
 where
     P: AsRef<Path>,
 {
@@ -197,4 +197,26 @@ where
     }
 
     Ok(cfg)
+}
+
+fn cfgs_link<P>(root_dir: P, cfg: &Cfg, minimum_cfgs: bool) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let root_dir = root_dir.as_ref();
+    let half_life_dir = root_dir.join(&cfg.half_life_dir);
+
+    // write cfgs dir
+    if let Some(cfgs_dir) = &cfg.cfgs_dir {
+        let cfgs_dir = root_dir.join(cfgs_dir);
+
+        files::write_cfgs(&cfgs_dir, minimum_cfgs)?;
+
+        // link to default game
+        let default_game_dir = half_life_dir.join(DEFAULT_GAME);
+
+        files::hard_link_cfgs(&cfgs_dir, default_game_dir)?;
+    }
+
+    Ok(())
 }

@@ -6,10 +6,17 @@ pub fn games<P>(half_life_dir: P) -> Result<()>
 where
     P: AsRef<Path>,
 {
-    let half_life_dir = half_life_dir.as_ref();
+    games_in_dir(half_life_dir)
+}
 
-    for entry in fs::read_dir(half_life_dir).context("Failed to read half-life directory")? {
-        let entry = entry.context("Failed to read half-life directory")?;
+pub fn games_in_dir<P>(dir: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let dir = dir.as_ref();
+
+    for entry in fs::read_dir(dir).context("Failed to read directory")? {
+        let entry = entry.context("Failed to read directory")?;
         let path = entry.path();
 
         if path.is_dir() && is_dir_game(&path) {

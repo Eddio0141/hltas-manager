@@ -13,6 +13,11 @@ use crate::{
     helper::{self, root_dir},
 };
 
+pub const STEAM_API_DLL_HASH: &[u8] = &[
+    0x8c, 0x07, 0x3e, 0x0d, 0x2c, 0xa3, 0x9d, 0x1e, 0x98, 0x6b, 0xec, 0x34, 0x8f, 0x98, 0x83, 0x03,
+    0x35, 0x7b, 0xe5, 0xc4, 0x95, 0xcc, 0xf6, 0xe0, 0x41, 0x58, 0x02, 0xb8, 0x6e, 0xae, 0x35, 0x34,
+];
+
 pub fn install(
     projects_dir: &Option<PathBuf>,
     half_life_dir: &Option<PathBuf>,
@@ -50,10 +55,12 @@ pub fn install(
     }
 
     // verify if steam_api.dll hash is matching
-    // TODO skip steam api stuff if not matching and warn user
     let steam_api_dll_hash = helper::sha_256_file(&steam_api_dll_path)?;
-    // TODO original hash
-    dbg!(&steam_api_dll_hash);
+
+    if STEAM_API_DLL_HASH != steam_api_dll_hash.as_slice() {
+        // TODO skip steam api stuff if not matching and warn user
+        // TODO but if the files reset.dll and sim.dll exists with the same hash, then we can skip this
+    }
 
     // create projects dir if it doesn't exist
     let projects_dir_create_worker = if !projects_dir.is_dir() {

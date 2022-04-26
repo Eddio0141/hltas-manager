@@ -12,6 +12,7 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 use fs_extra::dir::CopyOptions;
+use helper::root_dir;
 
 use crate::cfg::Cfg;
 use cli::*;
@@ -212,7 +213,16 @@ pub fn run(cli: Cli) -> Result<()> {
             game_name,
             copy_game_dir_for_sim_client,
         } => todo!(),
-        Commands::Games => todo!(),
+        Commands::Games => {
+            // load config
+            let cfg = helper::cfg_dir()?;
+            let cfg = Cfg::load_from_path(cfg)?;
+
+            let root = helper::root_dir()?;
+            let half_life_dir = root.join(&cfg.half_life_dir);
+
+            commands::games(half_life_dir)?;
+        }
     }
 
     Ok(())

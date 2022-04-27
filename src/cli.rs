@@ -6,6 +6,10 @@ use clap::*;
 pub struct Cli {
     #[clap(subcommand)]
     pub command: Commands,
+    #[clap(long)]
+    pub quiet: bool,
+    #[clap(long)]
+    pub no_colour: bool,
 }
 
 #[derive(Subcommand, Debug)]

@@ -1,6 +1,7 @@
 use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
+use log::info;
 
 pub fn games<P>(half_life_dir: P) -> Result<()>
 where
@@ -8,6 +9,7 @@ where
 {
     let games = games_in_dir(half_life_dir)?;
 
+    info!("Found {} games", games.len());
     for game in games {
         println!("{}", game);
     }

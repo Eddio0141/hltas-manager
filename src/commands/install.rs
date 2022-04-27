@@ -6,6 +6,7 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 use fs_extra::dir::CopyOptions;
+use log::{info, warn};
 
 use crate::{
     cfg::Cfg,
@@ -24,6 +25,7 @@ pub fn install(
     half_life_dir: &Option<PathBuf>,
     minimum_cfgs: bool,
 ) -> Result<()> {
+    info!("Loading config");
     // config
     let config_path = helper::cfg_dir()?;
     let cfg = cfg_file_set_up(
@@ -57,28 +59,33 @@ pub fn install(
     let steam_api_dll_hash = helper::sha_256_file(&steam_api_dll_path)?;
 
     if STEAM_API_DLL_HASH != steam_api_dll_hash.as_slice() {
-        // check if reset.dll exists and that hash is matching
-        // TODO skip steam api stuff if not matching and warn user
-        // TODO but if the files reset.dll and sim.dll exists with the same hash, then we can skip this
+        // check for reset.dll hash
+        if reset_dll_path.is_file() {
+            // check if reset.dll exists and that hash is matching
+            let reset_dll_hash = helper::sha_256_file(&reset_dll_path)?;
+
+            if STEAM_API_DLL_HASH != reset_dll_hash.as_slice() {
+                bail!("reset.dll hash is not matching default steam_api.dll hash");
+            }
+        } else {
+            warn!("steam_api.dll hash is not matching default steam_api.dll hash and reset.dll does not exist");
+        }
     }
 
     // hard link cfgs
     cfgs_link(&root_dir, &cfg, minimum_cfgs)?;
 
     // create projects dir if it doesn't exist
-    let projects_dir_create_worker = if !projects_dir.is_dir() {
+    if !projects_dir.is_dir() {
         if let Some(parent) = cfg.project_dir.parent() {
             if parent != Path::new("") {
                 bail!("Projects directory needs to be inside the root dir without any directories in between");
             }
         }
 
-        Some(thread::spawn(move || {
-            fs::create_dir(&projects_dir).context("Failed to create projects directory")
-        }))
-    } else {
-        None
-    };
+        info!("Creating projects directory");
+        fs::create_dir(&projects_dir).context("Failed to create projects directory")?;
+    }
 
     // copy half life directory if needs to be copied
     if let Some(no_client_dll_dir) = &cfg.no_client_dll_dir {
@@ -86,6 +93,7 @@ pub fn install(
 
         if !no_client_dll_dir.is_dir() {
             // TODO don't copy games in ignore list and exclude from copying here
+            info!("Copying half-life directory to a second game folder");
             fs::create_dir(&no_client_dll_dir).context("Failed to create second game folder")?;
             fs_extra::dir::copy(
                 &hl_dir,
@@ -105,6 +113,7 @@ pub fn install(
             })?;
 
             // copy the simulator dll to the second half-life directory's steam_api.dll
+            info!("Copying simulator client dll to the second half-life directory");
             fs::copy(
                 &base_sim_client_dll_path,
                 &no_client_dll_dir.join(steam_api_dll),
@@ -117,6 +126,7 @@ pub fn install(
     // only on main half life directory
     let sim_dll_copy_worker = if steam_api_dll_path.is_file() {
         thread::spawn(move || {
+            info!("Copying default steam_api.dll to reset.dll");
             fs::copy(&steam_api_dll_path, reset_dll_path)
                 .context("Failed to copy steam_api.dll to reset.dll")
         })
@@ -129,7 +139,12 @@ pub fn install(
     let steam_dll_copy_worker = if base_sim_client_dll_path.is_file() {
         let sim_client_dll_path = hl_dir.join(sim_dll);
 
+        if sim_client_dll_path.exists() {
+            info!("sim.dll already exists in the Half-Life directory, proceeding copy anyway");
+        }
+
         thread::spawn(move || {
+            info!("Copying sim.dll to the game directory");
             fs::copy(base_sim_client_dll_path, sim_client_dll_path)
                 .context("Failed to copy sim.dll")
         })
@@ -137,20 +152,12 @@ pub fn install(
         bail!(format!("{sim_dll} not found in the root directory"));
     };
 
-    if let Some(projects_dir_create_worker) = projects_dir_create_worker {
-        match projects_dir_create_worker.join() {
-            Ok(res) => res?,
-            Err(_) => bail!("Failed to create projects directory"),
-        }
+    if let Err(_) = sim_dll_copy_worker.join() {
+        bail!("Failed to copy sim.dll")
     }
-    match sim_dll_copy_worker.join() {
-        Ok(res) => res?,
-        Err(_) => bail!("Failed to copy sim.dll"),
-    };
-    match steam_dll_copy_worker.join() {
-        Ok(res) => res?,
-        Err(_) => bail!("Failed to copy steam_api.dll"),
-    };
+    if let Err(_) = steam_dll_copy_worker.join() {
+        bail!("Failed to copy steam_api.dll")
+    }
 
     Ok(())
 }
@@ -169,6 +176,7 @@ where
     if !config_path.is_file() {
         // create the config file
         Cfg::save_default_to_path(&config_path)?;
+        info!("Created default config file");
     }
 
     // load config
@@ -177,7 +185,11 @@ where
         Err(_) => {
             // attempt to save default config to fix the problem
             Cfg::save_default_to_path(&config_path)?;
-            Cfg::load_from_path(&config_path)?
+            let cfg = Cfg::load_from_path(&config_path)?;
+
+            info!("Couldn't load config file, saved default config file");
+
+            cfg
         }
     };
 
@@ -212,11 +224,13 @@ where
     if let Some(cfgs_dir) = &cfg.cfgs_dir {
         let cfgs_dir = root_dir.join(cfgs_dir);
 
+        info!("Writing tas cfgs in root directory");
         files::write_cfgs(&cfgs_dir, minimum_cfgs)?;
 
         // link to default game
         let default_game_dir = half_life_dir.join(DEFAULT_GAME);
 
+        info!("Hard-linking tas cfg files");
         files::hard_link_cfgs(&cfgs_dir, default_game_dir)?;
     }
 

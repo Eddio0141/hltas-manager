@@ -3,6 +3,7 @@ pub mod install;
 pub mod new;
 
 use anyhow::Result;
+use log::info;
 
 use crate::{
     cfg::Cfg,
@@ -20,6 +21,7 @@ pub fn run(cli: Cli) -> Result<()> {
             minimum_cfgs,
         } => {
             install(projects_dir, half_life_dir, *minimum_cfgs)?;
+            info!("Installed!");
         }
         Commands::New {
             project_name,

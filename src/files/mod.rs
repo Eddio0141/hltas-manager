@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::{bail, Context, Result};
+use log::info;
 
 pub const HARD_LINK_POST_CHECKOUT_HOOK: &[u8] = include_bytes!("./files/git_hooks/post-checkout");
 
@@ -59,14 +60,20 @@ where
     ];
 
     for (file_name, cfg_file) in files {
-        let mut file = File::create(path.join(&file_name))?;
-        file.write_all(cfg_file).with_context(|| {
-            format!(
-                "Failed to write cfg file {} to {}",
-                file_name,
-                path.display()
-            )
-        })?;
+        let path = path.join(&file_name);
+
+        if path.is_file() {
+            info!("Config {file_name} already exists, skipping");
+        } else {
+            let mut file = File::create(&path)?;
+            file.write_all(cfg_file).with_context(|| {
+                format!(
+                    "Failed to write cfg file {} to {}",
+                    file_name,
+                    path.display()
+                )
+            })?;
+        }
     }
 
     Ok(())

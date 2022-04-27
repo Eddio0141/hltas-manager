@@ -67,8 +67,10 @@ pub fn install(
 
     // create projects dir if it doesn't exist
     let projects_dir_create_worker = if !projects_dir.is_dir() {
-        if cfg.project_dir.parent().is_some() {
-            bail!("Projects directory needs to be inside the root dir without any directories in between");
+        if let Some(parent) = cfg.project_dir.parent() {
+            if parent != Path::new("") {
+                bail!("Projects directory needs to be inside the root dir without any directories in between");
+            }
         }
 
         Some(thread::spawn(move || {

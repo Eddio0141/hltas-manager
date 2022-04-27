@@ -35,8 +35,6 @@ fn init_logger() {
             log::Level::Trace => style.set_color(Color::White),
         };
 
-        dbg!(record.level());
-
         writeln!(buf, "{}: {}", style.value(record.level()), record.args())
     });
 

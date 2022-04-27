@@ -19,7 +19,6 @@ pub fn new(
     init_git: bool,
     no_init_git: bool,
 ) -> Result<()> {
-    // TODO check requirements of command before running it
     // load config
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load_from_path(cfg)?;
@@ -32,12 +31,42 @@ pub fn new(
     let half_life_dir = &cfg.half_life_dir;
     let game_dir = half_life_dir.join(game_name_full);
 
+    // validate if second client exists if copy_game_dir_for_sim_client is true
+    let second_game_dir = if copy_game_dir_for_sim_client {
+        match &cfg.no_client_dll_dir {
+            Some(no_client_dll_dir) => {
+                let second_client_dir = root_dir.join(no_client_dll_dir);
+
+                if !second_client_dir.is_dir() {
+                    bail!("Second client directory does not exist\nHelp: Run 'install' command first");
+                }
+
+                Some(second_client_dir.join(game_name_full))
+            },
+            None => bail!("copy-game-dir-for-sim-client flag is set, but no client dll dir doesn't exist\nHelp: Run 'install' command first"),
+        }
+    } else {
+        None
+    };
+
     game_dir_validate(&cfg, &game_name_full)?;
 
     if project_dir.exists() {
         bail!("Project folder already exists\nHelp: Use 'init' to initialize a project in an existing folder.");
     } else {
         fs::create_dir(&project_dir).context("Failed to create project folder")?;
+    }
+
+    // copy game dir
+    // will only copy if it doesn't exist
+    if let Some(second_game_dir) = second_game_dir {
+        let copy_options = CopyOptions {
+            skip_exist: true,
+            ..Default::default()
+        };
+
+        fs_extra::dir::copy(&game_dir, &second_game_dir, &copy_options)
+            .context("Failed to copy game dir")?;
     }
 
     let init_git = {
@@ -53,37 +82,6 @@ pub fn new(
     if init_git {
         set_up_git(&project_dir)?;
     }
-
-    // link cfgs if needed to
-    // if cfg.link_cfgs_to_new_game {
-    //     files::hard_link_cfgs(&project_dir)?;
-    // }
-
-    // TODO do this process in the install command, since the whole dir is copied
-    // let client_dll_path = game_dir.join("cl_dlls").join("client.dll");
-
-    // // only if client.dll exists, we copy the game dir
-    // if *copy_game_dir_for_sim_client && client_dll_path.is_file() {
-    //     // copy the game dir for the main client
-    //     let copy_path = game_dir
-    //         .parent()
-    //         .unwrap()
-    //         .join(format!("{game_name}_{}", &cfg.no_client_dll_dir_name));
-
-    //     if game_dir.is_dir() {
-    //         fs::copy(&game_dir, &copy_path).context("Failed to copy game dir")?;
-
-    //         // remove the client.dll
-    //         let copied_client_dll = copy_path.join("cl_dlls").join("client.dll");
-
-    //         fs::remove_file(copied_client_dll).context("Failed to remove client.dll")?;
-    //     } else {
-    //         bail!("Game directory not found");
-    //     }
-    // } else {
-    //     // generate toggle sim client batch files
-    //     files::write_toggle_sim_client(&project_dir)?;
-    // }
 
     // if this is a non-default game, check if cl_dlls/client.dll exists
     if let Some(game_name) = game_name {

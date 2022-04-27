@@ -12,3 +12,4 @@ toml = "0.5.9"
 serde = { version = "1.0.136", features = ["derive"] }
 fs_extra = "1.2.0"
 sha2 = "0.10.2"
+ansi_term = "0.12.1"

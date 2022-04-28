@@ -36,7 +36,6 @@ pub enum Commands {
     ///
     /// - The project is created in the 'tas' directory, but can be changed through the config file.
     New {
-        #[clap(long, short = 'n')]
         project_name: String,
         #[clap(long, short)]
         game_name: Option<String>,

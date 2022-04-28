@@ -26,22 +26,14 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::New {
             project_name,
             game_name,
-            copy_game_dir_for_sim_client,
             init_git,
             no_init_git,
         } => {
-            new(
-                project_name,
-                game_name,
-                *copy_game_dir_for_sim_client,
-                *init_git,
-                *no_init_git,
-            )?;
+            new(project_name, game_name, *init_git, *no_init_git)?;
         }
         Commands::Init {
             folder_name,
             game_name,
-            copy_game_dir_for_sim_client,
         } => todo!(),
         Commands::Games => {
             // load config

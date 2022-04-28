@@ -1,7 +1,6 @@
 use std::{
     fs,
     path::{Path, PathBuf},
-    thread,
 };
 
 use anyhow::{bail, Context, Result};
@@ -10,6 +9,7 @@ use log::{info, warn};
 
 use crate::{
     cfg::Cfg,
+    commands::games::games_in_dir,
     files,
     helper::{self, root_dir},
     DEFAULT_GAME,
@@ -92,15 +92,36 @@ pub fn install(
         let no_client_dll_dir = root_dir.join(no_client_dll_dir);
 
         if !no_client_dll_dir.is_dir() {
-            // TODO don't copy games in ignore list and exclude from copying here
+            let mut copy_paths = Vec::new();
+
+            let game_dirs = games_in_dir(&hl_dir)?;
+
+            let dirs = hl_dir
+                .read_dir()
+                .context("Failed to read Half-Life directory")?;
+            for entry in dirs {
+                // check if path is a game directory
+                let entry = entry.context("Failed to read Half-Life directory")?;
+                let path = entry.path();
+
+                // we exclude game dir from being copied unless its the default game
+                if let Some(path_name) = path.file_name() {
+                    let path_name = path_name.to_string_lossy().to_string();
+
+                    if path_name == DEFAULT_GAME || !game_dirs.contains(&path_name) {
+                        copy_paths.push(path);
+                    }
+                }
+            }
+
             info!("Copying half-life directory to a second game folder");
+
             fs::create_dir(&no_client_dll_dir).context("Failed to create second game folder")?;
-            fs_extra::dir::copy(
-                &hl_dir,
+            fs_extra::copy_items(
+                copy_paths.as_slice(),
                 &no_client_dll_dir,
                 &CopyOptions {
                     overwrite: true,
-                    content_only: true,
                     ..Default::default()
                 },
             )

@@ -39,8 +39,6 @@ pub enum Commands {
         project_name: String,
         #[clap(long, short)]
         game_name: Option<String>,
-        #[clap(long, short)]
-        copy_game_dir_for_sim_client: bool,
         #[clap(long, conflicts_with = "no-init-git")]
         init_git: bool,
         #[clap(long)]
@@ -54,15 +52,11 @@ pub enum Commands {
         folder_name: String,
         #[clap(long, short)]
         game_name: Option<String>,
-        // TODO depends on if game_name is set
-        #[clap(long, short)]
-        copy_game_dir_for_sim_client: bool,
     },
     /// Lists all available games.
     ///
     /// - Lists all games installed in the 'Half-Life' directory.
     /// - A game is usually all directories in the Half-Life directory.
     /// - Able to set exclusions in the config file.
-    // TODO auto detect if its a game or unrelated dir
     Games,
 }

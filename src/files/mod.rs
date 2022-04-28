@@ -41,6 +41,12 @@ pub const RECORD_CFG: &[u8] = include_bytes!("./files/cfgs/record.cfg");
 pub const EDITOR_CFG: &[u8] = include_bytes!("./files/cfgs/editor.cfg");
 pub const CAM_CFG: &[u8] = include_bytes!("./files/cfgs/cam.cfg");
 
+pub const HLTAS_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/hltas_min.cfg");
+pub const INGAME_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/ingame_min.cfg");
+pub const RECORD_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/record_min.cfg");
+pub const EDITOR_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/editor_min.cfg");
+pub const CAM_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/cam_min.cfg");
+
 pub fn write_cfgs<P>(path: P, minimum: bool) -> Result<()>
 where
     P: AsRef<Path>,
@@ -51,13 +57,23 @@ where
         fs::create_dir_all(path).context("Failed to create cfg dir")?;
     }
 
-    let files = vec![
-        ("hltas.cfg", HLTAS_CFG),
-        ("ingame.cfg", INGAME_CFG),
-        ("record.cfg", RECORD_CFG),
-        ("editor.cfg", EDITOR_CFG),
-        ("cam.cfg", CAM_CFG),
-    ];
+    let files = if minimum {
+        vec![
+            ("hltas.cfg", HLTAS_MIN_CFG),
+            ("ingame.cfg", INGAME_MIN_CFG),
+            ("record.cfg", RECORD_MIN_CFG),
+            ("editor.cfg", EDITOR_MIN_CFG),
+            ("cam.cfg", CAM_MIN_CFG),
+        ]
+    } else {
+        vec![
+            ("hltas.cfg", HLTAS_CFG),
+            ("ingame.cfg", INGAME_CFG),
+            ("record.cfg", RECORD_CFG),
+            ("editor.cfg", EDITOR_CFG),
+            ("cam.cfg", CAM_CFG),
+        ]
+    };
 
     for (file_name, cfg_file) in files {
         let path = path.join(&file_name);

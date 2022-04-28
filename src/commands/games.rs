@@ -9,10 +9,7 @@ where
 {
     let games = games_in_dir(half_life_dir)?;
 
-    info!("Found {} games", games.len());
-    for game in games {
-        println!("{}", game);
-    }
+    info!("Found {} games\n{}", games.len(), games.join("\n"));
 
     Ok(())
 }

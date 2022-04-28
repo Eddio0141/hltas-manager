@@ -8,7 +8,7 @@ where
     P: AsRef<Path>,
 {
     let games = game_dir_types(half_life_dir)?
-        .iter()
+        .into_iter()
         .map(|g| g.name)
         .collect::<Vec<_>>();
 

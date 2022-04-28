@@ -49,7 +49,7 @@ pub fn new(
         None
     };
 
-    game_dir_validate(&cfg, &game_name_full)?;
+    game_dir_validate(&cfg, game_name_full)?;
 
     if project_dir.exists() {
         bail!("Project folder already exists\nHelp: Use 'init' to initialize a project in an existing folder.");
@@ -133,9 +133,13 @@ fn game_dir_validate(cfg: &Cfg, game_name: &str) -> Result<()> {
     let game_dir = half_life_dir.join(game_name);
 
     // check if game is installed or not excluded
-    let games = games::games_in_dir(half_life_dir)?;
+    let games = games::game_dir_types(half_life_dir)?;
 
-    if cfg.ignore_games.iter().any(|g| games.contains(g)) {
+    if cfg
+        .ignore_games
+        .iter()
+        .any(|g| games.iter().any(|game| &game.name == g))
+    {
         bail!("Can't create project for game that is ignored in the config");
     }
 

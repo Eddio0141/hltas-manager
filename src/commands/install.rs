@@ -9,7 +9,7 @@ use log::{info, warn};
 
 use crate::{
     cfg::Cfg,
-    commands::games::games_in_dir,
+    commands::games::game_dir_types,
     files,
     helper::{self, root_dir},
     DEFAULT_GAME,
@@ -94,7 +94,7 @@ pub fn install(
         if !no_client_dll_dir.is_dir() {
             let mut copy_paths = Vec::new();
 
-            let game_dirs = games_in_dir(&hl_dir)?;
+            let game_dirs = game_dir_types(&hl_dir)?;
 
             let dirs = hl_dir
                 .read_dir()
@@ -108,7 +108,9 @@ pub fn install(
                 if let Some(path_name) = path.file_name() {
                     let path_name = path_name.to_string_lossy().to_string();
 
-                    if path_name == DEFAULT_GAME || !game_dirs.contains(&path_name) {
+                    if path_name == DEFAULT_GAME
+                        || game_dirs.iter().any(|game_dir| game_dir.name == path_name)
+                    {
                         copy_paths.push(path);
                     }
                 }

@@ -61,15 +61,26 @@ where
             let file_name = path
                 .file_name()
                 .context("Failed to get file name")?
-                .to_string_lossy();
-
-            let dir_type = types
-                .iter_mut()
-                .find(|t: &&mut DirType| t.name == file_name);
+                .to_string_lossy()
+                .to_string();
 
             let is_game = path.join(DLLS_DIR).is_dir() || path.join(CL_DLLS_DIR).is_dir();
             let is_hd = file_name.ends_with(HD_GAME);
             let is_addon = file_name.ends_with(ADDON_GAME);
+
+            let file_name = {
+                if is_hd {
+                    file_name.trim_end_matches(HD_GAME)
+                } else if is_addon {
+                    file_name.trim_end_matches(ADDON_GAME)
+                } else {
+                    &file_name
+                }
+            };
+
+            let dir_type = types
+                .iter_mut()
+                .find(|t: &&mut DirType| t.name == file_name);
 
             if !is_game && !is_hd && !is_addon {
                 continue;

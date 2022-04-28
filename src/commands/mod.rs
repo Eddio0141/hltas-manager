@@ -1,6 +1,6 @@
 pub mod games;
 pub mod install;
-pub mod new;
+pub mod project;
 
 use anyhow::Result;
 use log::info;
@@ -11,7 +11,7 @@ use crate::{
     helper,
 };
 
-use self::{games::games, install::install, new::new};
+use self::{games::games, install::install, project::init, project::new};
 
 pub fn run(cli: Cli) -> Result<()> {
     match &cli.command {
@@ -30,11 +30,17 @@ pub fn run(cli: Cli) -> Result<()> {
             no_init_git,
         } => {
             new(project_name, game_name, *init_git, *no_init_git)?;
+            info!("Created project!");
         }
         Commands::Init {
             folder_name,
             game_name,
-        } => todo!(),
+            init_git,
+            no_init_git,
+        } => {
+            init(folder_name, game_name, *init_git, *no_init_git)?;
+            info!("Initialized project!");
+        }
         Commands::Games => {
             // load config
             let cfg = helper::cfg_dir()?;

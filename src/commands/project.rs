@@ -1,7 +1,7 @@
 use std::{
     fs::{self, File},
     io::Write,
-    path::Path,
+    path::{Path, PathBuf},
     process,
 };
 
@@ -19,37 +19,11 @@ pub fn new(
     init_git: bool,
     no_init_git: bool,
 ) -> Result<()> {
-    // load config
-    info!("Loading config...");
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load_from_path(cfg)?;
-
-    // paths
     let root_dir = helper::root_dir()?;
     let project_dir = root_dir.join(&cfg.project_dir).join(project_name);
-    let default_game = DEFAULT_GAME.to_string();
-    let game_name_full = game_name.as_ref().unwrap_or(&default_game);
-    let half_life_dir = &cfg.half_life_dir;
-    let game_dir = half_life_dir.join(game_name_full);
 
-    // validate if second client exists if copy_game_dir_for_sim_client is true
-    let second_game_dir = match &cfg.no_client_dll_dir {
-        Some(no_client_dll_dir) => {
-            info!("Checking if second client exists...");
-            let second_client_dir = root_dir.join(no_client_dll_dir);
-
-            if !second_client_dir.is_dir() {
-                bail!("Second client directory does not exist\nHelp: Run 'install' command first");
-            }
-
-            Some(second_client_dir.join(game_name_full))
-        }
-        None => None,
-    };
-
-    game_dir_validate(&cfg, game_name_full)?;
-
-    // create project directory
     info!("Creating project directory...");
     if project_dir.exists() {
         bail!("Project folder already exists\nHelp: Use 'init' to initialize a project in an existing folder.");
@@ -57,10 +31,92 @@ pub fn new(
         fs::create_dir(&project_dir).context("Failed to create project folder")?;
     }
 
+    init_project(project_dir, game_name, init_git, no_init_git)
+}
+
+pub fn init(
+    project_name: &str,
+    game_name: &Option<String>,
+    init_git: bool,
+    no_init_git: bool,
+) -> Result<()> {
+    let cfg = helper::cfg_dir()?;
+    let cfg = Cfg::load_from_path(cfg)?;
+    let root_dir = helper::root_dir()?;
+    let project_dir = root_dir.join(&cfg.project_dir).join(project_name);
+
+    // check if project folder exists
+    if !project_dir.is_dir() {
+        bail!("Project folder does not exist\nHelp: Use 'new' to create a new project.");
+    }
+
+    init_project(project_dir, game_name, init_git, no_init_git)
+}
+
+fn init_project<P>(
+    project_dir: P,
+    game_name: &Option<String>,
+    init_git: bool,
+    no_init_git: bool,
+) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    // load config
+    info!("Loading config...");
+    let cfg = helper::cfg_dir()?;
+    let cfg = Cfg::load_from_path(cfg)?;
+
+    // paths
+    let root_dir = helper::root_dir()?;
+    let default_game = DEFAULT_GAME.to_string();
+    let game_name_full = game_name.as_ref().unwrap_or(&default_game);
+    let half_life_dir = &cfg.half_life_dir;
+    let game_dir = half_life_dir.join(game_name_full);
+
+    // validate if second client exists
+    let second_game_dir = validate_second_client(&cfg, &root_dir, game_name_full)?;
+
+    // validate if game dir exists
+    game_dir_validate(&cfg, game_name_full)?;
+
     // copy game dir
     // will only copy if it doesn't exist
+    copy_game_dir(second_game_dir, &game_dir, &project_dir)?;
+
+    let init_git = {
+        if init_git {
+            true
+        } else if no_init_git {
+            false
+        } else {
+            cfg.init_git_on_project
+        }
+    };
+
+    if init_git {
+        set_up_git(&project_dir)?;
+    }
+
+    // create linker batch file
+    info!("Creating hltas hard-link script...");
+    files::write_hltas_linker(&project_dir, half_life_dir)?;
+
+    // TODO
+    // create run_game file
+
+    Ok(())
+}
+
+fn copy_game_dir<P, P2, P3>(second_game_dir: Option<P>, game_dir: P2, project_dir: P3) -> Result<()>
+where
+    P: AsRef<Path>,
+    P2: AsRef<Path>,
+    P3: AsRef<Path>,
+{
     match second_game_dir {
         Some(second_game_dir) => {
+            let second_game_dir = second_game_dir.as_ref();
             // TODO might have to be smart and hard-link most files instead of copying
             info!("Copying game directory to second client...");
             let copy_options = CopyOptions {
@@ -85,28 +141,33 @@ pub fn new(
         }
     }
 
-    let init_git = {
-        if init_git {
-            true
-        } else if no_init_git {
-            false
-        } else {
-            cfg.init_git_on_project
+    Ok(())
+}
+
+fn validate_second_client<P>(
+    cfg: &Cfg,
+    root_dir: P,
+    game_name_full: &str,
+) -> Result<Option<PathBuf>>
+where
+    P: AsRef<Path>,
+{
+    let root_dir = root_dir.as_ref();
+    let second_client_dir = match &cfg.no_client_dll_dir {
+        Some(no_client_dll_dir) => {
+            info!("Checking if second client exists...");
+            let second_client_dir = root_dir.join(no_client_dll_dir);
+
+            if !second_client_dir.is_dir() {
+                bail!("Second client directory does not exist\nHelp: Run 'install' command first");
+            }
+
+            Some(second_client_dir.join(game_name_full))
         }
+        None => None,
     };
 
-    if init_git {
-        set_up_git(&project_dir)?;
-    }
-
-    // create linker batch file
-    info!("Creating hltas hard-link script...");
-    files::write_hltas_linker(&project_dir, half_life_dir)?;
-
-    // TODO
-    // create run_game file
-
-    Ok(())
+    Ok(second_client_dir)
 }
 
 fn game_dir_validate(cfg: &Cfg, game_name: &str) -> Result<()> {

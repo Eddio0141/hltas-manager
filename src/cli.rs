@@ -52,6 +52,10 @@ pub enum Commands {
         folder_name: String,
         #[clap(long, short)]
         game_name: Option<String>,
+        #[clap(long, conflicts_with = "no-init-git")]
+        init_git: bool,
+        #[clap(long)]
+        no_init_git: bool,
     },
     /// Lists all available games.
     ///

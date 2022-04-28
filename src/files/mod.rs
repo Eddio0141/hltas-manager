@@ -104,7 +104,9 @@ where
         }
 
         // ignore operation if the file already exists
-        if !dest_path.exists() {
+        if dest_path.exists() {
+            info!("Config {file_name} is already hard-linked, skipping");
+        } else {
             fs::hard_link(&src_path, &dest_path).with_context(|| {
                 format!(
                     "Failed to hard-link {} to {}",

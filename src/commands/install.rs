@@ -124,39 +124,32 @@ pub fn install(
 
     // copy default steam_api.dll as reset.dll
     // only on main half life directory
-    let sim_dll_copy_worker = if steam_api_dll_path.is_file() {
-        thread::spawn(move || {
+    if steam_api_dll_path.is_file() {
+        if reset_dll_path.is_file() {
+            info!("reset.dll already exists, skipping");
+        } else {
             info!("Copying default steam_api.dll to reset.dll");
             fs::copy(&steam_api_dll_path, reset_dll_path)
-                .context("Failed to copy steam_api.dll to reset.dll")
-        })
+                .context("Failed to copy steam_api.dll to reset.dll")?;
+        }
     } else {
         bail!("steam_api.dll not found in the Half-Life directory");
-    };
+    }
 
     // copy the simulator client steam_api.dll (sim.dll)
     // only do this on the main half life directory since the no client dll dir is used as the main client
-    let steam_dll_copy_worker = if base_sim_client_dll_path.is_file() {
+    if base_sim_client_dll_path.is_file() {
         let sim_client_dll_path = hl_dir.join(sim_dll);
 
         if sim_client_dll_path.exists() {
             info!("sim.dll already exists in the Half-Life directory, proceeding copy anyway");
         }
 
-        thread::spawn(move || {
-            info!("Copying sim.dll to the game directory");
-            fs::copy(base_sim_client_dll_path, sim_client_dll_path)
-                .context("Failed to copy sim.dll")
-        })
+        info!("Copying sim.dll to the game directory");
+        fs::copy(base_sim_client_dll_path, sim_client_dll_path)
+            .context("Failed to copy sim.dll")?;
     } else {
         bail!(format!("{sim_dll} not found in the root directory"));
-    };
-
-    if let Err(_) = sim_dll_copy_worker.join() {
-        bail!("Failed to copy sim.dll")
-    }
-    if let Err(_) = steam_dll_copy_worker.join() {
-        bail!("Failed to copy steam_api.dll")
     }
 
     Ok(())

@@ -25,7 +25,7 @@ pub fn install(
     half_life_dir: &Option<PathBuf>,
     minimum_cfgs: bool,
 ) -> Result<()> {
-    info!("Loading config");
+    info!("Loading config...");
     // config
     let config_path = helper::cfg_dir()?;
     let cfg = cfg_file_set_up(

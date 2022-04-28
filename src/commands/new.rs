@@ -7,6 +7,7 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 use fs_extra::dir::CopyOptions;
+use log::info;
 
 use crate::{cfg::Cfg, files, helper, DEFAULT_GAME};
 
@@ -15,11 +16,11 @@ use super::games;
 pub fn new(
     project_name: &str,
     game_name: &Option<String>,
-    copy_game_dir_for_sim_client: bool,
     init_git: bool,
     no_init_git: bool,
 ) -> Result<()> {
     // load config
+    info!("Loading config...");
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load_from_path(cfg)?;
 
@@ -32,25 +33,24 @@ pub fn new(
     let game_dir = half_life_dir.join(game_name_full);
 
     // validate if second client exists if copy_game_dir_for_sim_client is true
-    let second_game_dir = if copy_game_dir_for_sim_client {
-        match &cfg.no_client_dll_dir {
-            Some(no_client_dll_dir) => {
-                let second_client_dir = root_dir.join(no_client_dll_dir);
+    let second_game_dir = match &cfg.no_client_dll_dir {
+        Some(no_client_dll_dir) => {
+            info!("Checking if second client exists...");
+            let second_client_dir = root_dir.join(no_client_dll_dir);
 
-                if !second_client_dir.is_dir() {
-                    bail!("Second client directory does not exist\nHelp: Run 'install' command first");
-                }
+            if !second_client_dir.is_dir() {
+                bail!("Second client directory does not exist\nHelp: Run 'install' command first");
+            }
 
-                Some(second_client_dir.join(game_name_full))
-            },
-            None => bail!("copy-game-dir-for-sim-client flag is set, but no client dll dir doesn't exist\nHelp: Run 'install' command first"),
+            Some(second_client_dir.join(game_name_full))
         }
-    } else {
-        None
+        None => None,
     };
 
     game_dir_validate(&cfg, game_name_full)?;
 
+    // create project directory
+    info!("Creating project directory...");
     if project_dir.exists() {
         bail!("Project folder already exists\nHelp: Use 'init' to initialize a project in an existing folder.");
     } else {
@@ -59,14 +59,30 @@ pub fn new(
 
     // copy game dir
     // will only copy if it doesn't exist
-    if let Some(second_game_dir) = second_game_dir {
-        let copy_options = CopyOptions {
-            skip_exist: true,
-            ..Default::default()
-        };
+    match second_game_dir {
+        Some(second_game_dir) => {
+            // TODO might have to be smart and hard-link most files instead of copying
+            info!("Copying game directory to second client...");
+            let copy_options = CopyOptions {
+                skip_exist: true,
+                ..Default::default()
+            };
 
-        fs_extra::dir::copy(&game_dir, &second_game_dir, &copy_options)
-            .context("Failed to copy game dir")?;
+            fs_extra::dir::copy(&game_dir, &second_game_dir, &copy_options)
+                .context("Failed to copy game dir")?;
+
+            // remove client.dll if it exists
+            info!("Removing client.dll from second client...");
+            let second_game_client_dll = second_game_dir.join("cl_dlls").join("client.dll");
+            if second_game_client_dll.is_file() {
+                fs::remove_file(second_game_client_dll).context("Failed to remove client.dll")?;
+            }
+        }
+        None => {
+            // generate toggle sim client batch files
+            info!("Generating toggle sim client scripts...");
+            files::write_toggle_vanilla_game(&project_dir, &game_dir)?;
+        }
     }
 
     let init_git = {
@@ -83,43 +99,8 @@ pub fn new(
         set_up_git(&project_dir)?;
     }
 
-    // if this is a non-default game, check if cl_dlls/client.dll exists
-    if let Some(game_name) = game_name {
-        if *game_name != DEFAULT_GAME {
-            let client_dll_path = game_dir.join("cl_dlls").join("client.dll");
-
-            // if it exists, copy to the secondary game instance folder, or generate toggle batch files
-            if client_dll_path.is_file() {
-                match &cfg.no_client_dll_dir {
-                    Some(no_client_dll_dir_name) => {
-                        if no_client_dll_dir_name.is_dir() {
-                            // copy the game dir
-                            let copy_path =
-                                no_client_dll_dir_name.join("Half-Life").join(game_name);
-
-                            if !copy_path.is_dir() {
-                                let copy_options = CopyOptions {
-                                    overwrite: true,
-                                    ..Default::default()
-                                };
-                                fs_extra::dir::copy(&game_dir, &copy_path, &copy_options).context(
-                                    "Failed to copy game dir to secondary game instance",
-                                )?;
-                            }
-                        } else {
-                            bail!("Failed to find secondary game instance folder");
-                        }
-                    }
-                    None => {
-                        // generate toggle sim client batch files
-                        files::write_toggle_vanilla_game(&project_dir, &game_dir)?;
-                    }
-                }
-            }
-        }
-    }
-
     // create linker batch file
+    info!("Creating hltas hard-link script...");
     files::write_hltas_linker(&project_dir, half_life_dir)?;
 
     // TODO
@@ -133,6 +114,7 @@ fn game_dir_validate(cfg: &Cfg, game_name: &str) -> Result<()> {
     let game_dir = half_life_dir.join(game_name);
 
     // check if game is installed or not excluded
+    info!("Checking if game is installed...");
     let games = games::game_dir_types(half_life_dir)?;
 
     if cfg
@@ -144,6 +126,7 @@ fn game_dir_validate(cfg: &Cfg, game_name: &str) -> Result<()> {
     }
 
     // if game dir doesn't exist
+    info!("Checking if game dir exists...");
     if !game_dir.is_dir() {
         bail!(
             "Game '{game_name}' not found in the {} directory",
@@ -165,9 +148,11 @@ where
     let project_dir = project_dir.as_ref();
 
     if project_dir.join(".git").is_dir() {
+        info!("Project already has a git repository, skipping git init");
         return Ok(());
     }
 
+    info!("Setting up git repository...");
     process::Command::new("git")
     .current_dir(&project_dir)
     .arg("init")
@@ -175,29 +160,33 @@ where
     .context("Failed to init git\nHelp: Use '--no-init-git' to skip git init\nNote: This process failing could be due to git not being installed")?;
 
     // add hardlink hook to .git/hooks/post-checkout
+    info!("Adding hardlink hook to .git/hooks/post-checkout...");
     let post_checkout_hook_path = project_dir.join(".git/hooks/post-checkout");
 
     files::write_hard_link_shell_hook(post_checkout_hook_path)?;
 
     // create .gitignore file
+    info!("Creating .gitignore file...");
     let gitignore_path = project_dir.join(".gitignore");
     let gitignore = "*.bat";
-    let gitignore = format!("\n{gitignore}");
 
-    let mut gitignore_file = if gitignore_path.is_file() {
+    if gitignore_path.is_file() {
         // append to .gitignore
 
-        fs::OpenOptions::new()
+        let mut file = fs::OpenOptions::new()
             .append(true)
             .open(gitignore_path)
-            .context("Failed to open .gitignore")?
-    } else {
-        File::create(gitignore_path).context("Failed to create .gitignore")?
-    };
+            .context("Failed to open .gitignore")?;
 
-    gitignore_file
-        .write_all(gitignore.as_bytes())
-        .context("Failed to write to .gitignore")?;
+        let gitignore = format!("\n{gitignore}");
+
+        file.write_all(gitignore.as_bytes())
+            .context("Failed to write to .gitignore")?;
+    } else {
+        let mut file = File::create(gitignore_path).context("Failed to create .gitignore")?;
+        file.write_all(gitignore.as_bytes())
+            .context("Failed to write to .gitignore")?;
+    }
 
     Ok(())
 }

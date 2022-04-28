@@ -28,6 +28,23 @@ pub struct DirType {
     pub has_addon: bool,
 }
 
+impl DirType {
+    pub fn dir_names(&self) -> Vec<String> {
+        let mut dir_names = Vec::with_capacity(3);
+
+        dir_names.push(self.name.clone());
+
+        if self.has_hd {
+            dir_names.push(format!("{}{}", &self.name, HD_GAME));
+        }
+        if self.has_addon {
+            dir_names.push(format!("{}{}", &self.name, ADDON_GAME));
+        }
+
+        dir_names
+    }
+}
+
 pub fn game_dir_types<P>(dir: P) -> Result<Vec<DirType>>
 where
     P: AsRef<Path>,
@@ -49,26 +66,25 @@ where
             let dir_type = types
                 .iter_mut()
                 .find(|t: &&mut DirType| t.name == file_name);
-            let dir_type = match dir_type {
-                Some(dir_type) => dir_type,
-                None => {
-                    if path.join(DLLS_DIR).is_dir() || path.join(CL_DLLS_DIR).is_dir() {
-                        types.push(DirType {
-                            name: file_name.to_string(),
-                            has_hd: false,
-                            has_addon: false,
-                        });
-                        types.last_mut().unwrap()
-                    } else {
-                        continue;
-                    }
-                }
-            };
 
-            if file_name.ends_with(HD_GAME) {
-                dir_type.has_hd = true;
-            } else if file_name.ends_with(ADDON_GAME) {
-                dir_type.has_addon = true;
+            let is_game = path.join(DLLS_DIR).is_dir() || path.join(CL_DLLS_DIR).is_dir();
+            let is_hd = file_name.ends_with(HD_GAME);
+            let is_addon = file_name.ends_with(ADDON_GAME);
+
+            if !is_game && !is_hd && !is_addon {
+                continue;
+            } else if let Some(dir_type) = dir_type {
+                if is_hd {
+                    dir_type.has_hd = true;
+                } else if is_addon {
+                    dir_type.has_addon = true;
+                }
+            } else {
+                types.push(DirType {
+                    name: file_name.to_string(),
+                    has_hd: is_hd,
+                    has_addon: is_addon,
+                });
             }
         }
     }

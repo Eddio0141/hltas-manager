@@ -109,7 +109,7 @@ pub fn install(
                     let path_name = path_name.to_string_lossy().to_string();
 
                     if path_name == DEFAULT_GAME
-                        || game_dirs.iter().any(|game_dir| game_dir.name == path_name)
+                        || !game_dirs.iter().any(|game_dir| game_dir.dir_names().contains(&path_name))
                     {
                         copy_paths.push(path);
                     }

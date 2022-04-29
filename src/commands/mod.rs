@@ -1,6 +1,7 @@
 pub mod games;
 pub mod install;
 pub mod project;
+pub mod run_game;
 
 use anyhow::Result;
 use log::info;
@@ -8,10 +9,16 @@ use log::info;
 use crate::{
     cfg::Cfg,
     cli::{Cli, Commands},
-    helper::{self, root_dir},
+    helper::{self},
 };
 
-use self::{games::games, install::install, project::init, project::new};
+use self::{
+    games::games,
+    install::install,
+    project::init,
+    project::new,
+    run_game::{run_game, RunGameFlags},
+};
 
 pub fn run(cli: Cli) -> Result<()> {
     match &cli.command {
@@ -63,18 +70,20 @@ pub fn run(cli: Cli) -> Result<()> {
             params,
             no_r_input,
         } => {
-            // let root_dir = root_dir()?;
-
-            // info!("Loading config...");
-            // let cfg_dir = root_dir.join(cfg_file_name());
-            // let cfg = Cfg::load_from_path(cfg_dir).context("Failed to load cfg")?;
-
-            // let half_life_dir = root_dir.join(&cfg.half_life_dir);
-            // let hl_exe = half_life_dir.join("hl.exe");
-
-            // let r_input_path = root_dir.join("RInput").join("RInput.exe");
-
-            todo!()
+            run_game(
+                RunGameFlags {
+                    sim: *sim,
+                    low: *low,
+                    no_vanilla: *no_vanilla,
+                    record: *record,
+                    no_bxt: *no_bxt,
+                    no_r_input: *no_r_input,
+                },
+                *width,
+                *height,
+                run_script,
+                params,
+            )?;
         }
     }
 

@@ -142,11 +142,18 @@ where
             fs_extra::dir::copy(&game_dir, &second_game_dir, &copy_options)
                 .context("Failed to copy game dir")?;
 
-            // remove client.dll if it exists
-            info!("Removing client.dll from second client...");
-            let second_game_client_dll = second_game_dir.join("cl_dlls").join("client.dll");
-            if second_game_client_dll.is_file() {
-                fs::remove_file(second_game_client_dll).context("Failed to remove client.dll")?;
+            // remove client.dll if it exists unless default game
+            if let Some(game_name) = game_dir.as_ref().file_name() {
+                if game_name.to_string_lossy() == DEFAULT_GAME {
+                    info!("Copying game is the default game, skipping removal of client.dll");
+                } else {
+                    info!("Removing client.dll from second client...");
+                    let second_game_client_dll = second_game_dir.join("cl_dlls").join("client.dll");
+                    if second_game_client_dll.is_file() {
+                        fs::remove_file(second_game_client_dll)
+                            .context("Failed to remove client.dll")?;
+                    }
+                }
             }
         }
         None => {

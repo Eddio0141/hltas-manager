@@ -1,4 +1,5 @@
 use std::{
+    env::current_dir,
     path::Path,
     process::{self, Output},
 };
@@ -8,7 +9,7 @@ use log::info;
 
 use crate::{
     cfg::Cfg,
-    helper::{cfg_dir, root_dir},
+    helper::cfg_dir,
     project_toml::{self, ProjectToml},
 };
 
@@ -29,11 +30,16 @@ pub fn run_game(
     run_script: &Option<String>,
     params: &Option<Vec<String>>,
 ) -> Result<()> {
-    let root_dir = root_dir()?;
+    let current_dir_fail = "Failed to get current directory";
+
+    let current_dir = current_dir().context(current_dir_fail)?;
+    let tas_dir = current_dir.parent().context(current_dir_fail)?;
+    let root_dir = tas_dir.parent().context(current_dir_fail)?;
 
     info!("Loading config...");
     let cfg_dir = cfg_dir()?;
-    let cfg = Cfg::load_from_path(cfg_dir).context("Failed to load cfg")?;
+    let cfg =
+        Cfg::load_from_path(cfg_dir).context("Failed to load cfg\nHelp: Run 'install' first")?;
 
     info!("Loading project config...");
     let project_toml = ProjectToml::load_from_path(root_dir.join(project_toml::FILE_NAME))

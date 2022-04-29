@@ -63,8 +63,11 @@ pub enum Commands {
     /// - A game is usually all directories in the Half-Life directory.
     /// - Able to set exclusions in the config file.
     Games,
+    /// Runs the game.
+    /// 
+    /// - Requires you to run from the project directory.
     RunGame {
-        #[clap(long, conflicts_with_all = &["low", "no-vanilla", "record", "width", "height", "no-bxt", "run-script"])]
+        #[clap(long, conflicts_with_all = &["low", "vanilla-game", "record", "width", "height", "no-bxt", "run-script"])]
         sim: bool,
         #[clap(long, conflicts_with = "record")]
         low: bool,
@@ -74,14 +77,12 @@ pub enum Commands {
         record: bool,
         #[clap(
             long,
-            short,
             default_value("1280"),
             default_value_if("sim", None, Some("100"))
         )]
         width: u32,
         #[clap(
             long,
-            short,
             default_value("800"),
             default_value_if("sim", None, Some("100"))
         )]

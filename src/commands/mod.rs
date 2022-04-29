@@ -61,23 +61,23 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::RunGame {
             sim,
             low,
-            no_vanilla,
+            vanilla_game,
             record,
             width,
             height,
             no_bxt,
             run_script,
             params,
-            no_r_input,
+            r_input,
         } => {
             run_game(
                 RunGameFlags {
                     sim: *sim,
                     low: *low,
-                    no_vanilla: *no_vanilla,
+                    vanilla_game: *vanilla_game,
                     record: *record,
                     no_bxt: *no_bxt,
-                    no_r_input: *no_r_input,
+                    r_input: *r_input,
                 },
                 *width,
                 *height,

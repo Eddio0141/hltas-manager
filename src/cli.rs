@@ -69,7 +69,7 @@ pub enum Commands {
         #[clap(long, conflicts_with = "record")]
         low: bool,
         #[clap(long, conflicts_with = "record")]
-        no_vanilla: bool,
+        vanilla_game: bool,
         #[clap(long, conflicts_with = "no-bxt")]
         record: bool,
         #[clap(
@@ -93,6 +93,6 @@ pub enum Commands {
         #[clap(long, short)]
         params: Option<Vec<String>>,
         #[clap(long)]
-        no_r_input: bool,
+        r_input: bool,
     },
 }

@@ -9,6 +9,7 @@ use log::info;
 use crate::{
     cfg::Cfg,
     helper::{cfg_dir, root_dir},
+    project_toml::{self, ProjectToml},
 };
 
 pub struct RunGameFlags {
@@ -34,18 +35,25 @@ pub fn run_game(
     let cfg_dir = cfg_dir()?;
     let cfg = Cfg::load_from_path(cfg_dir).context("Failed to load cfg")?;
 
+    info!("Loading project config...");
+    let project_toml = ProjectToml::load_from_path(root_dir.join(project_toml::FILE_NAME))
+        .context("Failed to load project config")?;
+
     let r_input_exe = root_dir.join("RInput").join("RInput.exe");
     let tas_view_dir = root_dir.join("TASView");
 
     info!("Running game...");
     run_hl(
         root_dir,
-        params,
-        &run_game_flags,
         &cfg,
-        width,
-        height,
-        run_script,
+        &project_toml,
+        HLArgs {
+            hl_exe_args: params,
+            run_game_flags: &run_game_flags,
+            width,
+            height,
+            run_script,
+        },
     )?;
 
     if run_game_flags.r_input {
@@ -99,18 +107,26 @@ where
     }
 }
 
-fn run_hl<P>(
-    root_dir: P,
-    hl_exe_args: &Option<Vec<String>>,
-    run_game_flags: &RunGameFlags,
-    cfg: &Cfg,
+struct HLArgs<'a> {
+    hl_exe_args: &'a Option<Vec<String>>,
+    run_game_flags: &'a RunGameFlags,
     width: u32,
     height: u32,
-    run_script: &Option<String>,
-) -> Result<Output>
+    run_script: &'a Option<String>,
+}
+
+fn run_hl<P>(root_dir: P, cfg: &Cfg, project_toml: &ProjectToml, hl_args: HLArgs) -> Result<Output>
 where
     P: AsRef<Path>,
 {
+    let HLArgs {
+        hl_exe_args,
+        run_game_flags,
+        width,
+        height,
+        run_script,
+    } = hl_args;
+
     let root_dir = root_dir.as_ref();
     let injector_exe = root_dir.join("Bunnymod XT").join("Injector.exe");
 
@@ -124,8 +140,7 @@ where
         }
     };
     let hl_exe = hl_dir.join("hl.exe");
-    // TODO use of project.toml
-    let game = "valve";
+    let game = &project_toml.game;
 
     let hl_exe_args = {
         let mut args = Vec::new();

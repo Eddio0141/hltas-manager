@@ -32,7 +32,6 @@ impl Default for Cfg {
 }
 
 impl Cfg {
-    // TODO those need to use a normal error type
     pub fn load_from_path<P>(path: P) -> Result<Cfg>
     where
         P: AsRef<Path>,

@@ -9,7 +9,12 @@ use anyhow::{bail, Context, Result};
 use fs_extra::dir::CopyOptions;
 use log::info;
 
-use crate::{cfg::Cfg, files, helper, DEFAULT_GAME};
+use crate::{
+    cfg::Cfg,
+    files, helper,
+    project_toml::{self, ProjectToml},
+    DEFAULT_GAME,
+};
 
 use super::games;
 
@@ -79,6 +84,19 @@ where
 
     // validate if game dir exists
     game_dir_validate(&cfg, game_name_full)?;
+
+    // check on project.toml
+    let project_toml = project_dir.as_ref().join(project_toml::FILE_NAME);
+
+    if !project_toml.is_file() {
+        info!("Creating project.toml...");
+
+        let project = ProjectToml {
+            game: game_name_full.to_string(),
+        };
+
+        project.save_to_path(project_toml)?;
+    }
 
     // copy game dir
     // will only copy if it doesn't exist

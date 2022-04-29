@@ -3,6 +3,7 @@ pub mod cli;
 pub mod commands;
 pub mod files;
 pub mod helper;
+pub mod project_toml;
 
 // TODO other os support
 

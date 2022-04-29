@@ -69,6 +69,7 @@ pub fn run(cli: Cli) -> Result<()> {
             run_script,
             params,
             r_input,
+            no_tas_view,
         } => {
             run_game(
                 RunGameFlags {
@@ -78,6 +79,7 @@ pub fn run(cli: Cli) -> Result<()> {
                     record: *record,
                     no_bxt: *no_bxt,
                     r_input: *r_input,
+                    no_tas_view: *no_tas_view,
                 },
                 *width,
                 *height,

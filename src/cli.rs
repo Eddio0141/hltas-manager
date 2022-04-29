@@ -94,5 +94,7 @@ pub enum Commands {
         params: Option<Vec<String>>,
         #[clap(long)]
         r_input: bool,
+        #[clap(long)]
+        no_tas_view: bool,
     },
 }

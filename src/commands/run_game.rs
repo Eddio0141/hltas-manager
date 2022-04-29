@@ -18,6 +18,7 @@ pub struct RunGameFlags {
     pub record: bool,
     pub no_bxt: bool,
     pub r_input: bool,
+    pub no_tas_view: bool,
 }
 
 pub fn run_game(
@@ -33,14 +34,30 @@ pub fn run_game(
     let cfg_dir = cfg_dir()?;
     let cfg = Cfg::load_from_path(cfg_dir).context("Failed to load cfg")?;
 
-    let half_life_dir = root_dir.join(&cfg.half_life_dir);
-    let bxt_injector_exe = root_dir.join("Bunnymod XT").join("Injector.exe");
     let r_input_exe = root_dir.join("RInput").join("RInput.exe");
     let tas_view_dir = root_dir.join("TASView");
 
     info!("Running game...");
+    run_hl(
+        root_dir,
+        params,
+        &run_game_flags,
+        &cfg,
+        width,
+        height,
+        run_script,
+    )?;
 
-    todo!()
+    if run_game_flags.r_input {
+        info!("Running RInput...");
+        run_r_input(r_input_exe)?;
+    }
+    if !run_game_flags.no_tas_view {
+        info!("Running TASView...");
+        run_tas_view(tas_view_dir)?;
+    }
+
+    Ok(())
 }
 
 fn run_r_input<P>(r_input_exe: P) -> Result<Option<Output>>
@@ -50,7 +67,6 @@ where
     let r_input_exe = r_input_exe.as_ref();
 
     if r_input_exe.is_file() {
-        info!("Running RInput...");
         let output = process::Command::new(r_input_exe)
             .arg("hl.exe")
             .output()
@@ -62,15 +78,16 @@ where
     }
 }
 
-fn run_tas_view<P>(tas_view_exe: P) -> Result<Option<Output>>
+fn run_tas_view<P>(tas_view_dir: P) -> Result<Option<Output>>
 where
     P: AsRef<Path>,
 {
-    let tas_view_exe = tas_view_exe.as_ref();
+    let tas_view_dir = tas_view_dir.as_ref();
+    let tas_view_exe = tas_view_dir.join("TASView.exe");
 
     if tas_view_exe.is_file() {
-        info!("Running TASView...");
         let output = process::Command::new(tas_view_exe)
+            .current_dir(tas_view_dir)
             .output()
             .context("Failed to run TASView")?;
 
@@ -82,11 +99,10 @@ where
     }
 }
 
-fn run_hl<P, P2>(
-    hl_dir: P,
-    hl_exe_args: Vec<String>,
-    injector_exe: P2,
-    run_game_flags: RunGameFlags,
+fn run_hl<P>(
+    root_dir: P,
+    hl_exe_args: &Option<Vec<String>>,
+    run_game_flags: &RunGameFlags,
     cfg: &Cfg,
     width: u32,
     height: u32,
@@ -94,8 +110,11 @@ fn run_hl<P, P2>(
 ) -> Result<Output>
 where
     P: AsRef<Path>,
-    P2: AsRef<Path>,
 {
+    let root_dir = root_dir.as_ref();
+    let injector_exe = root_dir.join("Bunnymod XT").join("Injector.exe");
+
+    let hl_dir = root_dir.join(&cfg.half_life_dir);
     let hl_dir = if run_game_flags.vanilla_game || run_game_flags.sim {
         hl_dir.as_ref()
     } else {
@@ -105,7 +124,6 @@ where
         }
     };
     let hl_exe = hl_dir.join("hl.exe");
-    let injector_exe = injector_exe.as_ref();
     // TODO use of project.toml
     let game = "valve";
 
@@ -147,8 +165,10 @@ where
             args.push(format!("+bxt_tas_loadscript {run_script}"));
         }
 
-        for arg in hl_exe_args {
-            args.push(arg);
+        if let Some(hl_exe_args) = hl_exe_args {
+            for arg in hl_exe_args {
+                args.push(arg.to_string());
+            }
         }
 
         args

@@ -8,7 +8,7 @@ use log::info;
 use crate::{
     cfg::Cfg,
     cli::{Cli, Commands},
-    helper,
+    helper::{self, root_dir},
 };
 
 use self::{games::games, install::install, project::init, project::new};
@@ -50,6 +50,31 @@ pub fn run(cli: Cli) -> Result<()> {
             let half_life_dir = root.join(&cfg.half_life_dir);
 
             games(half_life_dir)?;
+        }
+        Commands::RunGame {
+            sim,
+            low,
+            no_vanilla,
+            record,
+            width,
+            height,
+            no_bxt,
+            run_script,
+            params,
+            no_r_input,
+        } => {
+            // let root_dir = root_dir()?;
+
+            // info!("Loading config...");
+            // let cfg_dir = root_dir.join(cfg_file_name());
+            // let cfg = Cfg::load_from_path(cfg_dir).context("Failed to load cfg")?;
+
+            // let half_life_dir = root_dir.join(&cfg.half_life_dir);
+            // let hl_exe = half_life_dir.join("hl.exe");
+
+            // let r_input_path = root_dir.join("RInput").join("RInput.exe");
+
+            todo!()
         }
     }
 

@@ -102,9 +102,6 @@ where
     info!("Creating hltas hard-link script...");
     files::write_hltas_linker(&project_dir, half_life_dir)?;
 
-    // TODO
-    // create run_game file
-
     Ok(())
 }
 

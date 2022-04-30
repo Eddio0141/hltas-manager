@@ -83,8 +83,7 @@ pub fn link() -> Result<()> {
                 info!("File already exists, removing");
                 fs::remove_file(&game_dir_hltas).context("Failed to remove hltas")?;
             }
-            fs::hard_link(&hltas, half_life_dir.join(&game_dir_hltas))
-                .context("Failed to hard link hltas")?;
+            fs::hard_link(&hltas, &game_dir_hltas).context("Failed to hard link hltas")?;
         }
     }
 

@@ -8,8 +8,7 @@ use anyhow::{bail, Context, Result};
 use log::info;
 
 use crate::{
-    cfg::Cfg,
-    helper::cfg_dir,
+    cfg::{self, Cfg},
     project_toml::{self, ProjectToml},
 };
 
@@ -29,21 +28,50 @@ pub fn run_game(
     height: u32,
     run_script: &Option<String>,
     params: &Option<Vec<String>>,
+    game_override: &Option<String>,
 ) -> Result<()> {
     let current_dir_fail = "Failed to get current directory";
 
-    let current_dir = current_dir().context(current_dir_fail)?;
-    let tas_dir = current_dir.parent().context(current_dir_fail)?;
-    let root_dir = tas_dir.parent().context(current_dir_fail)?;
+    let (project_dir, root_dir, cfg) = {
+        let current_dir = current_dir().context(current_dir_fail)?;
+        let project_toml = current_dir.join(project_toml::FILE_NAME);
 
-    info!("Loading config...");
-    let cfg_dir = cfg_dir()?;
-    let cfg =
-        Cfg::load_from_path(cfg_dir).context("Failed to load cfg\nHelp: Run 'install' first")?;
+        if project_toml.is_file() {
+            let project_dir = current_dir.to_path_buf();
+            let projects_dir = current_dir
+                .parent()
+                .context("Failed to get tas dir")?
+                .to_path_buf();
+            let root_dir = projects_dir
+                .parent()
+                .context("Failed to get root dir")?
+                .to_path_buf();
+            let cfg_dir = root_dir.join(cfg::cfg_file_name());
+
+            info!("Loading config...");
+            let cfg = Cfg::load(&cfg_dir).context("Failed to load config")?;
+
+            (Some(project_dir), root_dir, cfg)
+        } else {
+            // assume we are in root dir
+            let root_dir = current_dir;
+            let cfg_dir = root_dir.join(cfg::cfg_file_name());
+
+            info!("Loading config...");
+            let cfg = Cfg::load(&cfg_dir).context("Failed to load config")?;
+
+            (None, root_dir, cfg)
+        }
+    };
 
     info!("Loading project config...");
-    let project_toml = ProjectToml::load_from_path(current_dir.join(project_toml::FILE_NAME))
-        .context("Failed to load project config")?;
+    let project_toml = match project_dir {
+        Some(project_dir) => Some(
+            ProjectToml::load_from_path(project_dir.join(project_toml::FILE_NAME))
+                .context("Failed to load project config")?,
+        ),
+        None => None,
+    };
 
     let r_input_exe = root_dir.join("RInput").join("RInput.exe");
     let tas_view_dir = root_dir.join("TASView");
@@ -59,6 +87,7 @@ pub fn run_game(
             width,
             height,
             run_script,
+            game_override,
         },
     )?;
 
@@ -119,9 +148,15 @@ struct HLArgs<'a> {
     width: u32,
     height: u32,
     run_script: &'a Option<String>,
+    game_override: &'a Option<String>,
 }
 
-fn run_hl<P>(root_dir: P, cfg: &Cfg, project_toml: &ProjectToml, hl_args: HLArgs) -> Result<Output>
+fn run_hl<P>(
+    root_dir: P,
+    cfg: &Cfg,
+    project_toml: &Option<ProjectToml>,
+    hl_args: HLArgs,
+) -> Result<Output>
 where
     P: AsRef<Path>,
 {
@@ -131,6 +166,7 @@ where
         width,
         height,
         run_script,
+        game_override,
     } = hl_args;
 
     let root_dir = root_dir.as_ref();
@@ -145,7 +181,13 @@ where
         }
     };
     let hl_exe = hl_dir.join("hl.exe");
-    let game = &project_toml.game;
+    let game = match game_override {
+        Some(game_override) => game_override,
+        None => match project_toml {
+            Some(project_toml) => &project_toml.game,
+            None => bail!("No project.toml found\nHelp: Use the game-override parameter"),
+        },
+    };
 
     let hl_exe_args = {
         let mut args = Vec::new();

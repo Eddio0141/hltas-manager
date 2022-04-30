@@ -1,5 +1,6 @@
 pub mod games;
 pub mod install;
+pub mod link;
 pub mod project;
 pub mod run_game;
 
@@ -15,6 +16,7 @@ use crate::{
 use self::{
     games::games,
     install::install,
+    link::link,
     project::init,
     project::new,
     run_game::{run_game, RunGameFlags},
@@ -86,6 +88,10 @@ pub fn run(cli: Cli) -> Result<()> {
                 run_script,
                 params,
             )?;
+        }
+        Commands::Link => {
+            link()?;
+            info!("Linked hltases!");
         }
     }
 

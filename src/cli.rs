@@ -98,4 +98,8 @@ pub enum Commands {
         #[clap(long)]
         no_tas_view: bool,
     },
+    /// Links all .hltas files to the game directory.
+    /// 
+    /// - This command works on running from the project dir or the root dir.
+    Link,
 }

@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File},
+    fs::{self, File, OpenOptions},
     io::Write,
     path::{Path, PathBuf},
     process,
@@ -100,7 +100,10 @@ where
 
     // copy game dir
     // will only copy if it doesn't exist
-    copy_game_dir(second_game_dir, &game_dir, &project_dir)?;
+    copy_game_dir(&second_game_dir, &game_dir, &project_dir)?;
+
+    // override userconfig.cfg
+    override_userconfig(&game_dir, &second_game_dir)?;
 
     let init_git = {
         if init_git {
@@ -123,7 +126,53 @@ where
     Ok(())
 }
 
-fn copy_game_dir<P, P2, P3>(second_game_dir: Option<P>, game_dir: P2, project_dir: P3) -> Result<()>
+fn override_userconfig<P, P2>(game_dir: P, second_game_dir: &Option<P2>) -> Result<()>
+where
+    P: AsRef<Path>,
+    P2: AsRef<Path>,
+{
+    let config = "exec hltas.cfg\nloadtas2";
+
+    let userconfig_path = "userconfig.cfg";
+    let game_dir = game_dir.as_ref();
+
+    info!("Writing userconfig.cfg for game directory...");
+    let game_dir_userconfig = game_dir.join(userconfig_path);
+    if game_dir_userconfig.is_file() {
+        OpenOptions::new()
+            .append(true)
+            .open(game_dir_userconfig)?
+            .write_all(format!("\n{config}").as_bytes())
+            .context("Failed to write to userconfig.cfg")?;
+    } else {
+        fs::write(game_dir_userconfig, config).context("Failed to write to userconfig.cfg")?;
+    }
+
+    if let Some(second_game_dir) = second_game_dir {
+        let second_game_dir = second_game_dir.as_ref();
+        let second_game_dir_userconfig = second_game_dir.join(userconfig_path);
+
+        info!("Writing userconfig.cfg for second game directory...");
+        if second_game_dir_userconfig.is_file() {
+            OpenOptions::new()
+                .append(true)
+                .open(second_game_dir_userconfig)?
+                .write_all(format!("\n{config}").as_bytes())
+                .context("Failed to write to userconfig.cfg")?;
+        } else {
+            fs::write(second_game_dir_userconfig, config)
+                .context("Failed to write to userconfig.cfg")?;
+        }
+    }
+
+    Ok(())
+}
+
+fn copy_game_dir<P, P2, P3>(
+    second_game_dir: &Option<P>,
+    game_dir: P2,
+    project_dir: P3,
+) -> Result<()>
 where
     P: AsRef<Path>,
     P2: AsRef<Path>,

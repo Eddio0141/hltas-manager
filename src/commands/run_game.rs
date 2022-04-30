@@ -42,7 +42,7 @@ pub fn run_game(
         Cfg::load_from_path(cfg_dir).context("Failed to load cfg\nHelp: Run 'install' first")?;
 
     info!("Loading project config...");
-    let project_toml = ProjectToml::load_from_path(root_dir.join(project_toml::FILE_NAME))
+    let project_toml = ProjectToml::load_from_path(current_dir.join(project_toml::FILE_NAME))
         .context("Failed to load project config")?;
 
     let r_input_exe = root_dir.join("RInput").join("RInput.exe");
@@ -136,12 +136,11 @@ where
     let root_dir = root_dir.as_ref();
     let injector_exe = root_dir.join("Bunnymod XT").join("Injector.exe");
 
-    let hl_dir = root_dir.join(&cfg.half_life_dir);
     let hl_dir = if run_game_flags.vanilla_game || run_game_flags.sim {
-        hl_dir.as_ref()
+        root_dir.join(&cfg.half_life_dir)
     } else {
         match &cfg.no_client_dll_dir {
-            Some(no_client_dll_dir) => no_client_dll_dir.as_path(),
+            Some(no_client_dll_dir) => root_dir.join(no_client_dll_dir),
             None => bail!("No client DLL dir not set in the config"),
         }
     };
@@ -154,7 +153,6 @@ where
         args.push("-noforcemparms".to_string());
         args.push("-gl".to_string());
         args.push("+gl_vsync 0".to_string());
-        args.push("+exec userconfig.cfg".to_string());
         args.push(format!("-w {}", width));
         args.push(format!("-h {}", height));
 

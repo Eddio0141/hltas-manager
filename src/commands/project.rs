@@ -119,10 +119,6 @@ where
         set_up_git(&project_dir)?;
     }
 
-    // create linker batch file
-    info!("Creating hltas hard-link script...");
-    files::write_hltas_linker(&project_dir, half_life_dir)?;
-
     Ok(())
 }
 

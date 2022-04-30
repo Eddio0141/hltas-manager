@@ -211,30 +211,3 @@ where
 
     Ok(())
 }
-
-pub const LINK_HLTAS_FILES: &str = include_str!("./files/bat/link_hltas_files.bat");
-
-pub fn write_hltas_linker<P, P2>(dir: P, half_life_dir: P2) -> Result<()>
-where
-    P: AsRef<Path>,
-    P2: AsRef<Path>,
-{
-    let half_life_dir = half_life_dir
-        .as_ref()
-        .file_name()
-        .context("Failed to get half-life dir name")?;
-
-    let linker_file =
-        LINK_HLTAS_FILES.replace("HALF_LIFE_DIR", half_life_dir.to_string_lossy().as_ref());
-
-    let mut file = File::create(dir.as_ref().join("link_hltas_files.bat"))?;
-
-    file.write_all(linker_file.as_bytes()).with_context(|| {
-        format!(
-            "Failed to write file link_hltas_files.bat to {}",
-            dir.as_ref().display()
-        )
-    })?;
-
-    Ok(())
-}

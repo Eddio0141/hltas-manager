@@ -68,17 +68,23 @@ pub fn link() -> Result<()> {
     for hltas in hltases {
         // hard-link to main game
         info!("Linking {}", hltas.display());
-        fs::hard_link(&hltas, half_life_dir.join(hltas.file_name().unwrap()))
-            .context("Failed to hard link hltas")?;
+        let game_dir_hltas = half_life_dir.join(hltas.file_name().unwrap());
+        if game_dir_hltas.is_file() {
+            info!("File already exists, removing");
+            fs::remove_file(&game_dir_hltas).context("Failed to remove hltas")?;
+        }
+        fs::hard_link(&hltas, &game_dir_hltas).context("Failed to hard link hltas")?;
 
         if let Some(second_game_dir) = &cfg.no_client_dll_dir {
-            fs::hard_link(
-                &hltas,
-                half_life_dir
-                    .join(second_game_dir)
-                    .join(hltas.file_name().unwrap()),
-            )
-            .context("Failed to hard link hltas")?;
+            // hard-link to second game
+            let game_dir_hltas = second_game_dir.join(hltas.file_name().unwrap());
+
+            if game_dir_hltas.is_file() {
+                info!("File already exists, removing");
+                fs::remove_file(&game_dir_hltas).context("Failed to remove hltas")?;
+            }
+            fs::hard_link(&hltas, half_life_dir.join(&game_dir_hltas))
+                .context("Failed to hard link hltas")?;
         }
     }
 

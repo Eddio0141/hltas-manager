@@ -238,7 +238,6 @@ dependencies = [
  "clap",
  "env_logger",
  "fs_extra",
- "libc",
  "log",
  "serde",
  "sha2",

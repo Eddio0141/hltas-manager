@@ -15,3 +15,9 @@ sha2 = "0.10.2"
 env_logger = "0.9.0"
 log = "0.4.16"
 sysinfo = "0.23.11"
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.3.9"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.125"

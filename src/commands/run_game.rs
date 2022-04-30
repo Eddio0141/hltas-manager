@@ -1,7 +1,7 @@
 use std::{
     env::current_dir,
     path::Path,
-    process::{self, Output},
+    process::{self, Child, Output},
 };
 
 use anyhow::{bail, Context, Result};
@@ -128,7 +128,7 @@ where
     }
 }
 
-fn run_tas_view<P>(tas_view_dir: P) -> Result<Option<Output>>
+fn run_tas_view<P>(tas_view_dir: P) -> Result<Option<Child>>
 where
     P: AsRef<Path>,
 {
@@ -136,14 +136,14 @@ where
     let tas_view_exe = tas_view_dir.join("TASView.exe");
 
     if tas_view_exe.is_file() {
-        let output = process::Command::new(tas_view_exe)
+        let handle = process::Command::new(tas_view_exe)
             .current_dir(tas_view_dir)
-            .output()
+            .spawn()
             .context("Failed to run TASView")?;
 
         // TODO place TASView to the left of the screen
 
-        Ok(Some(output))
+        Ok(Some(handle))
     } else {
         Ok(None)
     }

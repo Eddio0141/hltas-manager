@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use sha2::Digest;
 
 use crate::cfg;
@@ -34,4 +34,51 @@ where
     hasher.update(&file);
 
     Ok(hasher.finalize().to_vec())
+}
+
+#[cfg(target_os = "windows")]
+pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
+    use winapi::um::winuser::{SetWindowPos, HWND_TOPMOST, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW};
+
+    let hwnd = unsafe {
+        winapi::um::winuser::FindWindowA(
+            std::ptr::null(),
+            process_name.as_bytes().as_ptr() as *const i8,
+        )
+    };
+
+    if hwnd == std::ptr::null_mut() {
+        bail!("Failed to find window");
+    }
+
+    unsafe {
+        SetWindowPos(
+            hwnd,
+            HWND_TOPMOST,
+            x,
+            y,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
+        );
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
+    let mut cmd = process::Command::new("wmctrl");
+    cmd.arg("-r")
+        .arg(process_name)
+        .arg("-e")
+        .arg(format!("0,{},{},0,0", x, y));
+
+    let output = cmd.output().context("Failed to move window")?;
+
+    if !output.status.success() {
+        bail!("wmctrl failed: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+    Ok(())
 }

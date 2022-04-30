@@ -25,7 +25,7 @@ pub fn new(
     no_init_git: bool,
 ) -> Result<()> {
     let cfg = helper::cfg_dir()?;
-    let cfg = Cfg::load_from_path(cfg)?;
+    let cfg = Cfg::load(cfg)?;
     let root_dir = helper::root_dir()?;
     let project_dir = root_dir.join(&cfg.project_dir).join(project_name);
 
@@ -46,7 +46,7 @@ pub fn init(
     no_init_git: bool,
 ) -> Result<()> {
     let cfg = helper::cfg_dir()?;
-    let cfg = Cfg::load_from_path(cfg)?;
+    let cfg = Cfg::load(cfg)?;
     let root_dir = helper::root_dir()?;
     let project_dir = root_dir.join(&cfg.project_dir).join(project_name);
 
@@ -70,7 +70,7 @@ where
     // load config
     info!("Loading config...");
     let cfg = helper::cfg_dir()?;
-    let cfg = Cfg::load_from_path(cfg)?;
+    let cfg = Cfg::load(cfg)?;
 
     // paths
     let root_dir = helper::root_dir()?;

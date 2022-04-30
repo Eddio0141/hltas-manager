@@ -53,7 +53,7 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Games => {
             // load config
             let cfg = helper::cfg_dir()?;
-            let cfg = Cfg::load_from_path(cfg)?;
+            let cfg = Cfg::load(cfg)?;
 
             let root = helper::root_dir()?;
             let half_life_dir = root.join(&cfg.half_life_dir);
@@ -72,6 +72,7 @@ pub fn run(cli: Cli) -> Result<()> {
             params,
             r_input,
             no_tas_view,
+            game_override,
         } => {
             run_game(
                 RunGameFlags {
@@ -87,6 +88,7 @@ pub fn run(cli: Cli) -> Result<()> {
                 *height,
                 run_script,
                 params,
+                game_override,
             )?;
         }
         Commands::Link => {

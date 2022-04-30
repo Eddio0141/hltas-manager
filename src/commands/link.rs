@@ -44,7 +44,7 @@ pub fn link() -> Result<()> {
 
     info!("Loading config...");
     let cfg_path = root_dir.join(cfg::cfg_file_name());
-    let cfg = Cfg::load_from_path(cfg_path).context("Failed to load cfg")?;
+    let cfg = Cfg::load(cfg_path).context("Failed to load cfg")?;
 
     let hltases = if project_toml_path.is_file() {
         hltases_from_dir(&project_toml_path)?

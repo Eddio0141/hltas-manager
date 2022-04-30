@@ -32,7 +32,7 @@ impl Default for Cfg {
 }
 
 impl Cfg {
-    pub fn load_from_path<P>(path: P) -> Result<Cfg>
+    pub fn load<P>(path: P) -> Result<Cfg>
     where
         P: AsRef<Path>,
     {
@@ -46,7 +46,7 @@ impl Cfg {
         Ok(cfg)
     }
 
-    pub fn save_to_path<P>(&self, path: P) -> Result<()>
+    pub fn save<P>(&self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
     {
@@ -64,7 +64,7 @@ impl Cfg {
         P: AsRef<Path>,
     {
         let cfg = Cfg::default();
-        cfg.save_to_path(path)
+        cfg.save(path)
     }
 }
 

@@ -198,12 +198,12 @@ where
     }
 
     // load config
-    let mut cfg = match Cfg::load_from_path(&config_path) {
+    let mut cfg = match Cfg::load(&config_path) {
         Ok(cfg) => cfg,
         Err(_) => {
             // attempt to save default config to fix the problem
             Cfg::save_default_to_path(&config_path)?;
-            let cfg = Cfg::load_from_path(&config_path)?;
+            let cfg = Cfg::load(&config_path)?;
 
             info!("Couldn't load config file, saved default config file");
 
@@ -225,7 +225,7 @@ where
 
     // save config
     if overridden_cfg {
-        cfg.save_to_path(&config_path)?;
+        cfg.save(&config_path)?;
     }
 
     Ok(cfg)

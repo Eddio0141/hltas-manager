@@ -64,7 +64,7 @@ pub enum Commands {
     /// - Able to set exclusions in the config file.
     Games,
     /// Runs the game.
-    /// 
+    ///
     /// - Requires you to run from the project directory.
     RunGame {
         #[clap(long, conflicts_with_all = &["low", "vanilla-game", "record", "width", "height", "no-bxt", "run-script"])]
@@ -81,11 +81,7 @@ pub enum Commands {
             default_value_if("sim", None, Some("100"))
         )]
         width: u32,
-        #[clap(
-            long,
-            default_value("800"),
-            default_value_if("sim", None, Some("100"))
-        )]
+        #[clap(long, default_value("800"), default_value_if("sim", None, Some("100")))]
         height: u32,
         #[clap(long, conflicts_with = "run-script")]
         no_bxt: bool,
@@ -97,9 +93,11 @@ pub enum Commands {
         r_input: bool,
         #[clap(long)]
         no_tas_view: bool,
+        #[clap(long, short)]
+        game_override: Option<String>,
     },
     /// Links all .hltas files to the game directory.
-    /// 
+    ///
     /// - This command works on running from the project dir or the root dir.
     Link,
 }

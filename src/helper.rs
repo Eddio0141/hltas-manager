@@ -82,3 +82,8 @@ pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(all(not(target_os = "windows"), not(target_os = "linux")))]
+pub fn move_window_to_pos(_x: i32, _y: i32, _process_name: &str) -> Result<()> {
+    compile_error!("move_window_to_pos is not implemented for this platform");
+}

@@ -6,6 +6,7 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 use log::info;
+use sysinfo::{System, SystemExt};
 
 use crate::{
     cfg::{self, Cfg},
@@ -30,6 +31,8 @@ pub fn run_game(
     params: &Option<Vec<String>>,
     game_override: &Option<String>,
 ) -> Result<()> {
+    let sys = System::new_all();
+
     let current_dir_fail = "Failed to get current directory";
 
     let (project_dir, root_dir, cfg) = {
@@ -96,8 +99,12 @@ pub fn run_game(
         run_r_input(r_input_exe)?;
     }
     if !run_game_flags.no_tas_view {
-        info!("Running TASView...");
-        run_tas_view(tas_view_dir)?;
+        if sys.processes_by_exact_name("TASView.exe").next().is_some() {
+            info!("TASView is already running");
+        } else {
+            info!("Running TASView...");
+            run_tas_view(tas_view_dir)?;
+        }
     }
 
     Ok(())

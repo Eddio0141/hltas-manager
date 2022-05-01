@@ -10,6 +10,7 @@ use sysinfo::{System, SystemExt};
 
 use crate::{
     cfg::{self, Cfg},
+    helper,
     project_toml::{self, ProjectToml},
 };
 
@@ -141,7 +142,10 @@ where
             .spawn()
             .context("Failed to run TASView")?;
 
-        // TODO place TASView to the left of the screen
+        // TODO wait for TASView to start
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
+        helper::move_window_to_pos(0, 350, "TASView")?;
 
         Ok(Some(handle))
     } else {

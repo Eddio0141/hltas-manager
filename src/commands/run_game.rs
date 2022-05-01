@@ -99,7 +99,7 @@ pub fn run_game(
         info!("Running RInput...");
         run_r_input(r_input_exe)?;
     }
-    if !run_game_flags.no_tas_view {
+    if !run_game_flags.no_tas_view && !run_game_flags.sim {
         if let Some(tas_view_process) = sys.processes_by_exact_name("TASView.exe").next() {
             info!("TASView is already running, killing it...");
             tas_view_process.kill();

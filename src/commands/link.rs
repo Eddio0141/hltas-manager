@@ -19,7 +19,7 @@ pub fn link() -> Result<()> {
     let hltases_from_dir = |dir: &Path| -> Result<Vec<PathBuf>> {
         let mut hltases = Vec::new();
 
-        for dir in dir.read_dir().context("Failed to read project toml")? {
+        for dir in dir.read_dir().context("Failed to read directory")? {
             let dir = dir.context("Failed to read dir")?;
             let path = dir.path();
 
@@ -37,7 +37,8 @@ pub fn link() -> Result<()> {
         let project_dir = project_toml_path
             .parent()
             .context("Failed to get project toml parent")?;
-        project_dir.parent().context("Failed to get root dir")?
+        let tas_dir = project_dir.parent().context("Failed to get root dir")?;
+        tas_dir.parent().context("Failed to get root dir parent")?
     } else {
         &current_dir
     };
@@ -47,14 +48,14 @@ pub fn link() -> Result<()> {
     let cfg = Cfg::load(cfg_path).context("Failed to load cfg")?;
 
     let hltases = if project_toml_path.is_file() {
-        hltases_from_dir(&project_toml_path)?
+        hltases_from_dir(&current_dir)?
     } else {
         let projects = current_dir.join(&cfg.project_dir);
 
         let mut hltases = Vec::new();
 
         for project in projects.read_dir().context("Failed to read project dir")? {
-            let project = project.context("Failed to read project")?;
+            let project = project.context("Failed to read project file")?;
             let path = project.path();
 
             hltases.extend(hltases_from_dir(&path)?);
@@ -77,7 +78,7 @@ pub fn link() -> Result<()> {
 
         if let Some(second_game_dir) = &cfg.no_client_dll_dir {
             // hard-link to second game
-            let game_dir_hltas = second_game_dir.join(hltas.file_name().unwrap());
+            let game_dir_hltas = root_dir.join(second_game_dir.join(hltas.file_name().unwrap()));
 
             if game_dir_hltas.is_file() {
                 info!("File already exists, removing");

@@ -38,7 +38,7 @@ where
 
 #[cfg(target_os = "windows")]
 pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
-    use winapi::um::winuser::{SetWindowPos, HWND_TOPMOST, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW};
+    use winapi::um::winuser::{SetWindowPos, HWND_NOTOPMOST, SWP_NOSIZE, SWP_SHOWWINDOW};
 
     let hwnd = unsafe {
         winapi::um::winuser::FindWindowA(
@@ -54,12 +54,12 @@ pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
     unsafe {
         SetWindowPos(
             hwnd,
-            HWND_TOPMOST,
+            HWND_NOTOPMOST,
             x,
             y,
             0,
             0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
+            SWP_NOSIZE | SWP_SHOWWINDOW,
         );
     }
 

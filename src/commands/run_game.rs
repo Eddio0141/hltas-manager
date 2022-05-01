@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 use log::info;
-use sysinfo::{System, SystemExt};
+use sysinfo::{ProcessExt, System, SystemExt};
 
 use crate::{
     cfg::{self, Cfg},
@@ -100,12 +100,15 @@ pub fn run_game(
         run_r_input(r_input_exe)?;
     }
     if !run_game_flags.no_tas_view {
-        if sys.processes_by_exact_name("TASView.exe").next().is_some() {
-            info!("TASView is already running");
-        } else {
-            info!("Running TASView...");
-            run_tas_view(tas_view_dir)?;
+        if let Some(tas_view_process) = sys.processes_by_exact_name("TASView.exe").next() {
+            info!("TASView is already running, killing it...");
+            tas_view_process.kill();
+            // TODO wait for it to exit
+            std::thread::sleep(std::time::Duration::from_millis(500));
         }
+
+        info!("Running TASView...");
+        run_tas_view(tas_view_dir)?;
     }
 
     Ok(())
@@ -145,7 +148,7 @@ where
         // TODO wait for TASView to start
         std::thread::sleep(std::time::Duration::from_millis(500));
 
-        helper::move_window_to_pos(0, 350, "TASView")?;
+        helper::move_window_to_pos(-8, 350, "TASView")?;
 
         Ok(Some(handle))
     } else {

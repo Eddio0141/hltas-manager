@@ -230,9 +230,6 @@ where
             args.push("+violence_hblood 0".to_string());
             args.push("+violence_hgibs 0".to_string());
         }
-        if !run_game_flags.vanilla_game {
-            // TODO
-        }
         if run_game_flags.record {
             args.push("-noborder sdl_createwindow".to_string());
         }

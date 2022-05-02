@@ -66,7 +66,7 @@ pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
     Ok(())
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(target_os = "unix")]
 pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
     let mut cmd = process::Command::new("wmctrl");
     cmd.arg("-r")

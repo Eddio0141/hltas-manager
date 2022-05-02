@@ -135,9 +135,12 @@ where
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
 pub const ENABLE_VANILLA_GAME: &str = include_str!("./files/bat/enable_vanilla_game.bat");
+#[cfg(target_os = "windows")]
 pub const DISABLE_VANILLA_GAME: &str = include_str!("./files/bat/disable_vanilla_game.bat");
 
+#[cfg(target_os = "windows")]
 pub fn write_toggle_vanilla_game<P, P2>(path: P, game_dir: P2) -> Result<()>
 where
     P: AsRef<Path>,
@@ -171,9 +174,21 @@ where
     Ok(())
 }
 
+#[cfg(all(not(target_os = "windows")))]
+pub fn write_toggle_vanilla_game<P, P2>(path: P, game_dir: P2) -> Result<()>
+where
+    P: AsRef<Path>,
+    P2: AsRef<Path>,
+{
+    compile_error!("Toggle vanilla game is not implemented for this platform");
+}
+
+#[cfg(target_os = "windows")]
 pub const ENABLE_SIM_CLIENT: &str = include_str!("./files/bat/enable_sim_client.bat");
+#[cfg(target_os = "windows")]
 pub const DISABLE_SIM_CLIENT: &str = include_str!("./files/bat/disable_sim_client.bat");
 
+#[cfg(target_os = "windows")]
 pub fn write_toggle_sim_client<P, P2>(dir: P, half_life_dir: P2) -> Result<()>
 where
     P: AsRef<Path>,
@@ -192,6 +207,7 @@ where
 
     let enable_sim_client =
         ENABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.to_string_lossy());
+
     let disable_sim_client =
         DISABLE_SIM_CLIENT.replace("HALF_LIFE_DIR", &half_life_dir.to_string_lossy());
 
@@ -201,12 +217,19 @@ where
     ];
 
     for (file_name, cfg_file) in files {
-        let file_name = format!("{}.bat", file_name);
-
         let mut file = File::create(dir.join(&file_name))?;
         file.write_all(cfg_file.as_bytes())
             .with_context(|| format!("Failed to write file {} to {}", file_name, dir.display()))?;
     }
 
     Ok(())
+}
+
+#[cfg(all(not(target_os = "windows")))]
+pub fn write_toggle_sim_client<P, P2>(_dir: P, _half_life_dir: P2) -> Result<()>
+where
+    P: AsRef<Path>,
+    P2: AsRef<Path>,
+{
+    compile_error!("write_toggle_sim_client is not implemented for this platform");
 }

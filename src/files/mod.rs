@@ -34,7 +34,6 @@ where
     Ok(())
 }
 
-// TODO review those cfg files
 pub const HLTAS_CFG: &[u8] = include_bytes!("./files/cfgs/hltas.cfg");
 pub const INGAME_CFG: &[u8] = include_bytes!("./files/cfgs/ingame.cfg");
 pub const RECORD_CFG: &[u8] = include_bytes!("./files/cfgs/record.cfg");

@@ -41,8 +41,8 @@ pub fn run_game(
         let project_toml = current_dir.join(project_toml::FILE_NAME);
 
         if project_toml.is_file() {
-            let project_dir = current_dir.to_path_buf();
-            let projects_dir = current_dir
+            let project_dir = current_dir;
+            let projects_dir = project_dir
                 .parent()
                 .context("Failed to get tas dir")?
                 .to_path_buf();

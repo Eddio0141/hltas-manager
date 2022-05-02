@@ -47,7 +47,7 @@ pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
         )
     };
 
-    if hwnd == std::ptr::null_mut() {
+    if hwnd.is_null() {
         bail!("Failed to find window");
     }
 

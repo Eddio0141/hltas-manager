@@ -119,6 +119,26 @@ where
         set_up_git(&project_dir)?;
     }
 
+    // create scripts to run manager with subcommand
+    create_manager_scripts(&project_dir)?;
+
+    Ok(())
+}
+
+fn create_manager_scripts<P>(project_dir: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let project_dir = project_dir.as_ref();
+
+    // run-game
+    files::write_run_manager_sub_command_script(&project_dir, "run_game.bat", "run-game")
+        .context("Failed to create run-game.bat script")?;
+
+    // link files
+    files::write_run_manager_sub_command_script(&project_dir, "link_hltas.bat", "link")
+        .context("Failed to create link_hltas.bat script")?;
+
     Ok(())
 }
 

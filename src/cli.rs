@@ -67,32 +67,47 @@ pub enum Commands {
     ///
     /// - Requires you to run from the project directory.
     RunGame {
+        /// Runs the simulator client.
         #[clap(long, conflicts_with_all = &["low", "vanilla-game", "record", "width", "height", "no-bxt", "run-script"])]
         sim: bool,
+        /// Runs the game with low quality settings.
         #[clap(long, conflicts_with = "record")]
         low: bool,
+        /// Runs the main game with client.dll and default settings.
         #[clap(long, conflicts_with = "record")]
         vanilla_game: bool,
+        /// Runs the game in high quality and 1080p resolution by default.
         #[clap(long, conflicts_with = "no-bxt")]
         record: bool,
+        /// Sets the window width.
         #[clap(
             long,
             default_value("1280"),
+            // TODO fix this
             default_value_if("sim", None, Some("100"))
         )]
         width: u32,
+        /// Sets the window height.
         #[clap(long, default_value("800"), default_value_if("sim", None, Some("100")))]
         height: u32,
+        /// Runs the game without bxt.
         #[clap(long, conflicts_with = "run-script")]
         no_bxt: bool,
+        /// The game will run a hltas script as it starts.
+        ///
+        /// Useful in running the script with the 'seed' property to specify rng.
         #[clap(long)]
         run_script: Option<String>,
+        /// Parameters to pass to hl.exe on start.
         #[clap(long, short)]
         params: Option<Vec<String>>,
+        /// If using r-input.
         #[clap(long)]
         r_input: bool,
+        /// If disabling TASView.
         #[clap(long)]
         no_tas_view: bool,
+        /// Overrides the game to launch over project config.
         #[clap(long, short)]
         game_override: Option<String>,
     },
@@ -100,4 +115,10 @@ pub enum Commands {
     ///
     /// - This command works on running from the project dir or the root dir.
     Link,
+    /// Syncs the SAVE directory with the primary and secondary game directories.
+    ///
+    /// - This command will fail if you don't have no-client-dll-dir set in the config file.
+    /// - It will copy the missing save files from each other.
+    /// - If the save files are both present, it will copy the latest created one to the other.
+    SyncSaves,
 }

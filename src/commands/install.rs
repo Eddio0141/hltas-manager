@@ -48,7 +48,7 @@ pub fn install(
 
     // verifying if the half-life directory exists
     if !hl_dir.is_dir() {
-        bail!("Half-life directory does not exist");
+        bail!("Half-life directory does not exist, possible that you don't have the manager in a goldsrc package folder");
     }
     // verifying that sim.dll exists in root dir
     if !base_sim_client_dll_path.is_file() {

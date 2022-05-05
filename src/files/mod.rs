@@ -7,7 +7,7 @@ use std::{
 use anyhow::{bail, Context, Result};
 use log::info;
 
-pub const HARD_LINK_POST_CHECKOUT_HOOK: &[u8] = include_bytes!("./files/git_hooks/post-checkout");
+const HARD_LINK_POST_CHECKOUT_HOOK: &[u8] = include_bytes!("./files/git_hooks/post-checkout");
 
 pub fn write_hard_link_shell_hook<P>(path: P) -> Result<()>
 where
@@ -34,17 +34,17 @@ where
     Ok(())
 }
 
-pub const HLTAS_CFG: &[u8] = include_bytes!("./files/cfgs/hltas.cfg");
-pub const INGAME_CFG: &[u8] = include_bytes!("./files/cfgs/ingame.cfg");
-pub const RECORD_CFG: &[u8] = include_bytes!("./files/cfgs/record.cfg");
-pub const EDITOR_CFG: &[u8] = include_bytes!("./files/cfgs/editor.cfg");
-pub const CAM_CFG: &[u8] = include_bytes!("./files/cfgs/cam.cfg");
+const HLTAS_CFG: &[u8] = include_bytes!("./files/cfgs/hltas.cfg");
+const INGAME_CFG: &[u8] = include_bytes!("./files/cfgs/ingame.cfg");
+const RECORD_CFG: &[u8] = include_bytes!("./files/cfgs/record.cfg");
+const EDITOR_CFG: &[u8] = include_bytes!("./files/cfgs/editor.cfg");
+const CAM_CFG: &[u8] = include_bytes!("./files/cfgs/cam.cfg");
 
-pub const HLTAS_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/hltas_min.cfg");
-pub const INGAME_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/ingame_min.cfg");
-pub const RECORD_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/record_min.cfg");
-pub const EDITOR_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/editor_min.cfg");
-pub const CAM_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/cam_min.cfg");
+const HLTAS_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/hltas_min.cfg");
+const INGAME_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/ingame_min.cfg");
+const RECORD_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/record_min.cfg");
+const EDITOR_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/editor_min.cfg");
+const CAM_MIN_CFG: &[u8] = include_bytes!("./files/cfgs/cam_min.cfg");
 
 pub fn write_cfgs<P>(path: P, minimum: bool) -> Result<()>
 where
@@ -136,9 +136,9 @@ where
 }
 
 #[cfg(target_os = "windows")]
-pub const ENABLE_VANILLA_GAME: &str = include_str!("./files/bat/enable_vanilla_game.bat");
+const ENABLE_VANILLA_GAME: &str = include_str!("./files/bat/enable_vanilla_game.bat");
 #[cfg(target_os = "windows")]
-pub const DISABLE_VANILLA_GAME: &str = include_str!("./files/bat/disable_vanilla_game.bat");
+const DISABLE_VANILLA_GAME: &str = include_str!("./files/bat/disable_vanilla_game.bat");
 
 #[cfg(target_os = "windows")]
 pub fn write_toggle_vanilla_game<P, P2>(path: P, game_dir: P2) -> Result<()>
@@ -184,9 +184,9 @@ where
 }
 
 #[cfg(target_os = "windows")]
-pub const ENABLE_SIM_CLIENT: &str = include_str!("./files/bat/enable_sim_client.bat");
+const ENABLE_SIM_CLIENT: &str = include_str!("./files/bat/enable_sim_client.bat");
 #[cfg(target_os = "windows")]
-pub const DISABLE_SIM_CLIENT: &str = include_str!("./files/bat/disable_sim_client.bat");
+const DISABLE_SIM_CLIENT: &str = include_str!("./files/bat/disable_sim_client.bat");
 
 #[cfg(target_os = "windows")]
 pub fn write_toggle_sim_client<P, P2>(dir: P, half_life_dir: P2) -> Result<()>
@@ -232,4 +232,43 @@ where
     P2: AsRef<Path>,
 {
     compile_error!("write_toggle_sim_client is not implemented for this platform");
+}
+
+#[cfg(target_os = "windows")]
+const RUN_MANAGER_EXEC_BASE: &str = include_str!("./files/bat/run_manager_base.bat");
+
+#[cfg(target_os = "windows")]
+pub fn write_run_manager_sub_command_script<P>(
+    path: P,
+    file_name: &str,
+    sub_command: &str,
+) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+
+    if !path.is_dir() {
+        bail!("{} is not a directory", path.display());
+    }
+
+    let script = RUN_MANAGER_EXEC_BASE.replace("SUB_COMMAND", sub_command);
+
+    let mut file = File::create(path.join(file_name)).context("Failed to create file")?;
+    file.write_all(script.as_bytes())
+        .with_context(|| format!("Failed to write file {} to {}", file_name, path.display()))?;
+
+    Ok(())
+}
+
+#[cfg(all(not(target_os = "windows")))]
+pub fn write_run_manager_sub_command_script<P>(
+    _path: P,
+    _file_name: &str,
+    _sub_command: &str,
+) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    compile_error!("write_run_manager_sub_command_script is not implemented for this platform");
 }

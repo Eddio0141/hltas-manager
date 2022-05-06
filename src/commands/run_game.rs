@@ -1,7 +1,7 @@
 use std::{
     env::current_dir,
     path::Path,
-    process::{self, Child, Output},
+    process::{self, Child, Output, Stdio},
     thread,
     time::Duration,
 };
@@ -143,8 +143,12 @@ where
     let tas_view_exe = tas_view_dir.join("TASView.exe");
 
     if tas_view_exe.is_file() {
+        // we completely ignore the output of TASView.exe
         let handle = process::Command::new(tas_view_exe)
             .current_dir(tas_view_dir)
+            .stderr(Stdio::null())
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
             .spawn()
             .context("Failed to run TASView")?;
 

@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{bail, Context, Result};
-use log::{info, warn};
+use log::{debug, info, warn};
 use sysinfo::{ProcessExt, System, SystemExt};
 
 use crate::{
@@ -213,6 +213,7 @@ where
         args.push("-noforcemparms".to_string());
         args.push("-gl".to_string());
         args.push("+gl_vsync 0".to_string());
+        args.push("windowed".to_string());
         args.push(format!("-w {}", width));
         args.push(format!("-h {}", height));
 
@@ -247,7 +248,12 @@ where
             }
         }
 
-        args
+        debug!("HL args: {:?}", args);
+
+        // intentionally split the args that contains spaces to individual items
+        args.iter()
+            .flat_map(|arg| arg.split_whitespace().map(|s| s.to_string()))
+            .collect::<Vec<_>>()
     };
 
     let output = if run_game_flags.no_bxt {

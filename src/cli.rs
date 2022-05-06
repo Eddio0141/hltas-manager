@@ -83,12 +83,17 @@ pub enum Commands {
         #[clap(
             long,
             default_value("1280"),
-            // TODO fix this
-            default_value_if("sim", None, Some("100"))
+            default_value_if("sim", None, Some("100")),
+            default_value_if("record", None, Some("1920"))
         )]
         width: u32,
         /// Sets the window height.
-        #[clap(long, default_value("800"), default_value_if("sim", None, Some("100")))]
+        #[clap(
+            long,
+            default_value("800"),
+            default_value_if("sim", None, Some("100")),
+            default_value_if("record", None, Some("1080"))
+        )]
         height: u32,
         /// Runs the game without bxt.
         #[clap(long, conflicts_with = "run-script")]

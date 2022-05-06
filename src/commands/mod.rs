@@ -3,6 +3,7 @@ pub mod install;
 pub mod link;
 pub mod project;
 pub mod run_game;
+pub mod sync_saves;
 
 use anyhow::Result;
 use log::info;
@@ -10,7 +11,7 @@ use log::info;
 use crate::{
     cfg::Cfg,
     cli::{Cli, Commands},
-    helper::{self},
+    helper::{self}, commands::sync_saves::sync_saves,
 };
 
 use self::{
@@ -55,7 +56,7 @@ pub fn run(cli: Cli) -> Result<()> {
             let cfg = helper::cfg_dir()?;
             let cfg = Cfg::load(cfg)?;
 
-            let root = helper::root_dir()?;
+            let root = helper::exe_dir()?;
             let half_life_dir = root.join(&cfg.half_life_dir);
 
             games(half_life_dir)?;
@@ -94,6 +95,10 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Link => {
             link()?;
             info!("Linked hltases!");
+        }
+        Commands::SyncSaves => {
+            sync_saves()?;
+            info!("Synced saves!");
         }
     }
 

@@ -150,3 +150,27 @@ pub fn wait_for_process_exit(name: &str, timeout: Duration) -> Result<()> {
         sys.refresh_processes();
     }
 }
+
+pub fn wait_for_process_start(name: &str, timeout: Duration) -> Result<()> {
+    let start_time = SystemTime::now();
+    let end_time = start_time + timeout;
+    let mut sys = System::new_with_specifics(
+        RefreshKind::default()
+            .with_processes(ProcessRefreshKind::everything().without_disk_usage()),
+    );
+
+    loop {
+        if let Some(_) = sys.processes_by_exact_name(name).next() {
+            return Ok(());
+        }
+
+        let now = SystemTime::now();
+        if now > end_time {
+            bail!("Process {} did not start in time", name);
+        }
+
+        thread::sleep(std::time::Duration::from_millis(100));
+
+        sys.refresh_processes();
+    }
+}

@@ -21,7 +21,7 @@ pub fn sync_saves() -> Result<()> {
     let config = Cfg::load(config_path).context("Failed to load config")?;
 
     // paths
-    let saves = Path::new("SAVES");
+    let save = Path::new("SAVE");
     let half_life_dir = root_dir.join(&config.half_life_dir);
     let half_life_second_dir = match &config.no_client_dll_dir {
         Some(dir) => dir,
@@ -35,8 +35,8 @@ pub fn sync_saves() -> Result<()> {
         game_dir_types(&half_life_second_dir).context("Failed to get games from second dir")?;
 
     for game in games {
-        let first_dir_saves_dir = half_life_dir.join(&game.name).join(saves);
-        let second_dir_saves_dir = half_life_second_dir.join(&game.name).join(saves);
+        let first_dir_saves_dir = half_life_dir.join(&game.name).join(save);
+        let second_dir_saves_dir = half_life_second_dir.join(&game.name).join(save);
 
         // create all dir for missing saves folder
         if !first_dir_saves_dir.is_dir() {
@@ -46,15 +46,17 @@ pub fn sync_saves() -> Result<()> {
             fs::create_dir_all(&second_dir_saves_dir).context("Failed to create saves dir")?;
         }
 
-        let files_from_dir = |dir: &Path| -> Result<Vec<PathBuf>> {
+        let saves_from_dir = |dir: &Path| -> Result<Vec<PathBuf>> {
             let mut saves = Vec::new();
 
             for dir in dir.read_dir().context("Failed to read dir")? {
                 let dir = dir.context("Failed to read dir")?;
                 let path = dir.path();
 
-                if path.is_file() {
-                    saves.push(path);
+                if let Some(extension) = path.extension() {
+                    if extension == "sav" {
+                        saves.push(path);
+                    }
                 }
             }
 
@@ -62,8 +64,8 @@ pub fn sync_saves() -> Result<()> {
         };
 
         // get list of save files from each dir
-        let first_dir_saves = files_from_dir(&first_dir_saves_dir)?;
-        let mut second_dir_saves = files_from_dir(&second_dir_saves_dir)?;
+        let first_dir_saves = saves_from_dir(&first_dir_saves_dir)?;
+        let mut second_dir_saves = saves_from_dir(&second_dir_saves_dir)?;
 
         for path in first_dir_saves {
             // check if file exists in second dir

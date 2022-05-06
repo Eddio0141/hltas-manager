@@ -6,7 +6,6 @@ use clap::*;
 pub struct Cli {
     #[clap(subcommand)]
     pub command: Commands,
-    // TODO actually implement those flags
     #[clap(long)]
     pub quiet: bool,
     #[clap(long)]

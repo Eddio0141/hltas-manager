@@ -6,9 +6,9 @@ use log::{error, LevelFilter};
 use std::io::Write;
 
 fn main() {
-    init_logger();
-
     let cli = Cli::parse();
+
+    init_logger(&cli);
 
     if let Err(err) = run(cli) {
         error!("{:?}", err);
@@ -17,7 +17,17 @@ fn main() {
     }
 }
 
-fn init_logger() {
+fn init_logger(cli: &Cli) {
+    let Cli {
+        command: _,
+        quiet,
+        no_colour,
+    } = *cli;
+
+    if quiet {
+        return;
+    }
+
     let mut builder = env_logger::builder();
 
     #[cfg(debug_assertions)]
@@ -29,16 +39,18 @@ fn init_logger() {
         .format_timestamp(None)
         .filter_level(LevelFilter::Info);
 
-    builder.format(|buf, record| {
+    builder.format(move |buf, record| {
         let mut style = buf.style();
 
-        match record.level() {
-            log::Level::Error => style.set_color(Color::Red).set_bold(true),
-            log::Level::Warn => style.set_color(Color::Yellow),
-            log::Level::Info => style.set_color(Color::Green),
-            log::Level::Debug => style.set_color(Color::Blue),
-            log::Level::Trace => style.set_color(Color::White),
-        };
+        if !no_colour {
+            match record.level() {
+                log::Level::Error => style.set_color(Color::Red).set_bold(true),
+                log::Level::Warn => style.set_color(Color::Yellow),
+                log::Level::Info => style.set_color(Color::Green),
+                log::Level::Debug => style.set_color(Color::Blue),
+                log::Level::Trace => style.set_color(Color::White),
+            };
+        }
 
         writeln!(buf, "{}: {}", style.value(record.level()), record.args())
     });

@@ -197,7 +197,6 @@ where
     match second_game_dir {
         Some(second_game_dir) => {
             let second_game_dir = second_game_dir.as_ref();
-            // TODO might have to be smart and hard-link most files instead of copying
             info!("Copying game directory to second client...");
             let copy_options = CopyOptions {
                 skip_exist: true,

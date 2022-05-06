@@ -26,7 +26,7 @@ pub fn new(
 ) -> Result<()> {
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load(cfg)?;
-    let root_dir = helper::root_dir()?;
+    let root_dir = helper::exe_dir()?;
     let project_dir = root_dir.join(&cfg.project_dir).join(project_name);
 
     info!("Creating project directory...");
@@ -47,7 +47,7 @@ pub fn init(
 ) -> Result<()> {
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load(cfg)?;
-    let root_dir = helper::root_dir()?;
+    let root_dir = helper::exe_dir()?;
     let project_dir = root_dir.join(&cfg.project_dir).join(project_name);
 
     // check if project folder exists
@@ -73,7 +73,7 @@ where
     let cfg = Cfg::load(cfg)?;
 
     // paths
-    let root_dir = helper::root_dir()?;
+    let root_dir = helper::exe_dir()?;
     let default_game = DEFAULT_GAME.to_string();
     let game_name_full = game_name.as_ref().unwrap_or(&default_game);
     let half_life_dir = &cfg.half_life_dir;

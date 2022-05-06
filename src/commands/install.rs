@@ -11,7 +11,7 @@ use crate::{
     cfg::Cfg,
     commands::games::game_dir_types,
     files,
-    helper::{self, root_dir},
+    helper::{self, exe_dir},
     DEFAULT_GAME,
 };
 
@@ -37,7 +37,7 @@ pub fn install(
     )?;
 
     // paths
-    let root_dir = root_dir()?;
+    let root_dir = exe_dir()?;
     let hl_dir = root_dir.join(&cfg.half_life_dir);
     let projects_dir = root_dir.join(&cfg.project_dir);
     let sim_dll = "sim.dll";

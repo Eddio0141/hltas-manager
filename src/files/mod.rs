@@ -5,10 +5,19 @@ use std::{
 };
 
 use anyhow::{bail, Context, Result};
+use lazy_static::lazy_static;
 use log::info;
 
-const HARD_LINK_POST_CHECKOUT_HOOK: &[u8] = include_bytes!("./files/git_hooks/post-checkout");
+use crate::helper;
 
+const HARD_LINK_POST_CHECKOUT_HOOK: &[u8] = include_bytes!("./files/git_hooks/post-checkout");
+lazy_static! {
+    static ref HARD_LINK_POST_CHECKOUT_HOOK_SHA_256: Vec<u8> =
+        helper::sha_256_file(Path::new("./files/git_hooks/post-checkout"))
+            .expect("Failed to get sha256 of post-checkout hook");
+}
+
+// TODO hash check for other functions too
 pub fn write_hard_link_shell_hook<P>(path: P) -> Result<()>
 where
     P: AsRef<Path>,
@@ -16,18 +25,24 @@ where
     let path = path.as_ref();
 
     let mut file = if path.is_file() {
-        // append to existing hook
-
-        fs::OpenOptions::new()
-            .append(true)
-            .open(path)
-            .context("Failed to open ./git/hooks/post-checkout")?
+        // append to existing hook unless it is the same
+        if helper::sha_256_file(path).context("Failed to get sha256 of post-checkout hook")?
+            == *HARD_LINK_POST_CHECKOUT_HOOK_SHA_256
+        {
+            info!("Post-checkout hook is already installed");
+            return Ok(());
+        } else {
+            fs::OpenOptions::new()
+                .append(true)
+                .open(path)
+                .context("Failed to open ./git/hooks/post-checkout")?
+        }
     } else {
         // create new file
-
         File::create(path).context("Failed to create ./git/hooks/post-checkout")?
     };
 
+    info!("Installing post-checkout hook");
     file.write_all(HARD_LINK_POST_CHECKOUT_HOOK)
         .context("Failed to write hard-link hook to ./git/hooks/post-checkout")?;
 
@@ -242,11 +257,7 @@ const RUN_MANAGER_EXEC_BASE_PS1: &str = include_str!("./files/ps1/run_manager_ba
 const RUN_MANAGER_SUB_COMMAND: &str = "SUB_COMMAND";
 
 #[cfg(target_os = "windows")]
-pub fn write_manager_subcmd_script_bat<P>(
-    path: P,
-    file_name: &str,
-    sub_command: &str,
-) -> Result<()>
+pub fn write_manager_subcmd_script_bat<P>(path: P, file_name: &str, sub_command: &str) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -266,11 +277,7 @@ where
 }
 
 #[cfg(target_os = "windows")]
-pub fn write_manager_subcmd_script<P>(
-    path: P,
-    file_name: &str,
-    sub_command: &str,
-) -> Result<()>
+pub fn write_manager_subcmd_script<P>(path: P, file_name: &str, sub_command: &str) -> Result<()>
 where
     P: AsRef<Path>,
 {

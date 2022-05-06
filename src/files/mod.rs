@@ -7,17 +7,19 @@ use std::{
 use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
 use log::info;
+use sha2::Digest;
 
 use crate::helper;
 
 const HARD_LINK_POST_CHECKOUT_HOOK: &[u8] = include_bytes!("./files/git_hooks/post-checkout");
 lazy_static! {
-    static ref HARD_LINK_POST_CHECKOUT_HOOK_SHA_256: Vec<u8> =
-        helper::sha_256_file(Path::new("./files/git_hooks/post-checkout"))
-            .expect("Failed to get sha256 of post-checkout hook");
+    static ref HARD_LINK_POST_CHECKOUT_HOOK_SHA_256: Vec<u8> = {
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(&HARD_LINK_POST_CHECKOUT_HOOK);
+        hasher.finalize().to_vec()
+    };
 }
 
-// TODO hash check for other functions too
 pub fn write_hard_link_shell_hook<P>(path: P) -> Result<()>
 where
     P: AsRef<Path>,

@@ -8,6 +8,7 @@ use std::{
 use anyhow::{bail, Context, Result};
 use fs_extra::dir::CopyOptions;
 use log::info;
+use sha2::{Digest, Sha256};
 
 use crate::{
     cfg::Cfg,
@@ -17,6 +18,8 @@ use crate::{
 };
 
 use super::games;
+
+use lazy_static::lazy_static;
 
 pub fn new(
     project_name: &str,
@@ -316,6 +319,15 @@ fn game_dir_validate(cfg: &Cfg, game_name: &str) -> Result<()> {
     Ok(())
 }
 
+const GIT_IGNORE: &str = "*.bat\n*.ps1";
+lazy_static! {
+    static ref GIT_IGNORE_SHA_256: Vec<u8> = {
+        let mut hasher = Sha256::new();
+        hasher.update(GIT_IGNORE);
+        hasher.finalize().to_vec()
+    };
+}
+
 fn set_up_git<P>(project_dir: P) -> Result<()>
 where
     P: AsRef<Path>,
@@ -334,29 +346,34 @@ where
     }
 
     // add hardlink hook to .git/hooks/post-checkout
-    info!("Adding hardlink hook to .git/hooks/post-checkout...");
     let post_checkout_hook_path = project_dir.join(".git/hooks/post-checkout");
 
     files::write_hard_link_shell_hook(post_checkout_hook_path)?;
 
     // create .gitignore file
-    info!("Creating .gitignore file...");
     let gitignore_path = project_dir.join(".gitignore");
     let gitignore = "*.bat\n*.ps1";
 
     if gitignore_path.is_file() {
-        // append to .gitignore
+        // append to .gitignore if sha256 isn't the same
+        if helper::sha_256_file(&gitignore_path).context("Failed to get sha256 of .gitignore")?
+            != *GIT_IGNORE_SHA_256
+        {
+            let mut file = fs::OpenOptions::new()
+                .append(true)
+                .open(&gitignore_path)
+                .context("Failed to open .gitignore")?;
 
-        let mut file = fs::OpenOptions::new()
-            .append(true)
-            .open(gitignore_path)
-            .context("Failed to open .gitignore")?;
+            file.write_all(gitignore.as_bytes())
+                .context("Failed to write to .gitignore")?;
 
-        let gitignore = format!("\n{gitignore}");
+            let gitignore = format!("\n{gitignore}");
 
-        file.write_all(gitignore.as_bytes())
-            .context("Failed to write to .gitignore")?;
+            file.write_all(gitignore.as_bytes())
+                .context("Failed to write to .gitignore")?;
+        }
     } else {
+        info!("Creating .gitignore file...");
         let mut file = File::create(gitignore_path).context("Failed to create .gitignore")?;
         file.write_all(gitignore.as_bytes())
             .context("Failed to write to .gitignore")?;

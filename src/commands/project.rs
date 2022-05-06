@@ -352,7 +352,6 @@ where
 
     // create .gitignore file
     let gitignore_path = project_dir.join(".gitignore");
-    let gitignore = "*.bat\n*.ps1";
 
     if gitignore_path.is_file() {
         // append to .gitignore if sha256 isn't the same
@@ -364,10 +363,10 @@ where
                 .open(&gitignore_path)
                 .context("Failed to open .gitignore")?;
 
-            file.write_all(gitignore.as_bytes())
+            file.write_all(GIT_IGNORE.as_bytes())
                 .context("Failed to write to .gitignore")?;
 
-            let gitignore = format!("\n{gitignore}");
+            let gitignore = format!("\n{GIT_IGNORE}");
 
             file.write_all(gitignore.as_bytes())
                 .context("Failed to write to .gitignore")?;
@@ -375,7 +374,7 @@ where
     } else {
         info!("Creating .gitignore file...");
         let mut file = File::create(gitignore_path).context("Failed to create .gitignore")?;
-        file.write_all(gitignore.as_bytes())
+        file.write_all(GIT_IGNORE.as_bytes())
             .context("Failed to write to .gitignore")?;
     }
 

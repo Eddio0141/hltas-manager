@@ -235,10 +235,14 @@ where
 }
 
 #[cfg(target_os = "windows")]
-const RUN_MANAGER_EXEC_BASE: &str = include_str!("./files/bat/run_manager_base.bat");
+const RUN_MANAGER_EXEC_BASE_BAT: &str = include_str!("./files/bat/run_manager_base.bat");
+#[cfg(target_os = "windows")]
+const RUN_MANAGER_EXEC_BASE_PS1: &str = include_str!("./files/ps1/run_manager_base.ps1");
+
+const RUN_MANAGER_SUB_COMMAND: &str = "SUB_COMMAND";
 
 #[cfg(target_os = "windows")]
-pub fn write_run_manager_sub_command_script<P>(
+pub fn write_manager_subcmd_script_bat<P>(
     path: P,
     file_name: &str,
     sub_command: &str,
@@ -252,7 +256,31 @@ where
         bail!("{} is not a directory", path.display());
     }
 
-    let script = RUN_MANAGER_EXEC_BASE.replace("SUB_COMMAND", sub_command);
+    let script = RUN_MANAGER_EXEC_BASE_BAT.replace(RUN_MANAGER_SUB_COMMAND, sub_command);
+
+    let mut file = File::create(path.join(file_name)).context("Failed to create file")?;
+    file.write_all(script.as_bytes())
+        .with_context(|| format!("Failed to write file {} to {}", file_name, path.display()))?;
+
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+pub fn write_manager_subcmd_script<P>(
+    path: P,
+    file_name: &str,
+    sub_command: &str,
+) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+
+    if !path.is_dir() {
+        bail!("{} is not a directory", path.display());
+    }
+
+    let script = RUN_MANAGER_EXEC_BASE_PS1.replace("SUB_COMMAND", sub_command);
 
     let mut file = File::create(path.join(file_name)).context("Failed to create file")?;
     file.write_all(script.as_bytes())

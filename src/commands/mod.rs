@@ -44,8 +44,15 @@ pub fn run(cli: Cli) -> Result<()> {
             game_name,
             init_git,
             no_init_git,
+            use_batch_scripts,
         } => {
-            new(project_name, game_name, *init_git, *no_init_git)?;
+            new(
+                project_name,
+                game_name,
+                *init_git,
+                *no_init_git,
+                *use_batch_scripts,
+            )?;
             info!("Created project!");
         }
         Commands::Init {
@@ -53,8 +60,15 @@ pub fn run(cli: Cli) -> Result<()> {
             game_name,
             init_git,
             no_init_git,
+            use_batch_scripts,
         } => {
-            init(folder_name, game_name, *init_git, *no_init_git)?;
+            init(
+                folder_name,
+                game_name,
+                *init_git,
+                *no_init_git,
+                *use_batch_scripts,
+            )?;
             info!("Initialized project!");
         }
         Commands::Games => {

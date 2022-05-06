@@ -18,7 +18,7 @@ pub enum DirLocation {
     Root,
 }
 
-pub fn working_dir() -> Result<CurrentDir> {
+pub fn try_root_dir() -> Result<CurrentDir> {
     let working_dir = std::env::current_dir().context("Failed to get current dir")?;
 
     let root_cfg_path = working_dir.join(cfg::cfg_file_name());

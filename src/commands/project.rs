@@ -319,7 +319,7 @@ fn game_dir_validate(cfg: &Cfg, game_name: &str) -> Result<()> {
     Ok(())
 }
 
-const GIT_IGNORE: &str = "*.bat\n*.ps1";
+const GIT_IGNORE: &str = include_str!("../../resource/git_ignores/project");
 lazy_static! {
     static ref GIT_IGNORE_SHA_256: Vec<u8> = {
         let mut hasher = Sha256::new();

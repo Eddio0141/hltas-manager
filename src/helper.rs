@@ -8,6 +8,42 @@ use sha2::Digest;
 
 use crate::cfg;
 
+pub struct CurrentDir {
+    pub path: PathBuf,
+    pub location: DirLocation,
+}
+
+pub enum DirLocation {
+    Project,
+    Root,
+}
+
+pub fn working_dir() -> Result<CurrentDir> {
+    let working_dir = std::env::current_dir().context("Failed to get current dir")?;
+
+    let root_cfg_path = working_dir.join(cfg::cfg_file_name());
+
+    if root_cfg_path.is_file() {
+        Ok(CurrentDir {
+            path: working_dir,
+            location: DirLocation::Root,
+        })
+    } else {
+        let tas_dir = working_dir.parent().context("Failed to get projects dir")?;
+        let root_dir = tas_dir.parent().context("Failed to get root dir")?;
+        let root_cfg_path = root_dir.join(cfg::cfg_file_name());
+
+        if root_cfg_path.is_file() {
+            Ok(CurrentDir {
+                path: root_dir.to_path_buf(),
+                location: DirLocation::Project,
+            })
+        } else {
+            bail!("Using the program from an unknown location");
+        }
+    }
+}
+
 pub fn exe_dir() -> Result<PathBuf> {
     let exe_path = std::env::current_exe().context("Failed to get current exe path")?;
     Ok(exe_path

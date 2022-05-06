@@ -160,7 +160,7 @@ pub fn wait_for_process_start(name: &str, timeout: Duration) -> Result<()> {
     );
 
     loop {
-        if let Some(_) = sys.processes_by_exact_name(name).next() {
+        if sys.processes_by_exact_name(name).next().is_some() {
             return Ok(());
         }
 

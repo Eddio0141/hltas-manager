@@ -105,7 +105,7 @@ pub fn run_game(
         if let Some(tas_view_process) = sys.processes_by_exact_name("TASView.exe").next() {
             info!("TASView is already running, killing it...");
             tas_view_process.kill();
-            if let Err(_) = helper::wait_for_process_exit("TASView.exe", Duration::from_secs(5)) {
+            if helper::wait_for_process_exit("TASView.exe", Duration::from_secs(5)).is_err() {
                 warn!("TAView.exe did not exit in time");
             }
         }

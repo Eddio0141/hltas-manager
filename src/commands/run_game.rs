@@ -2,6 +2,7 @@ use std::{
     env::current_dir,
     path::Path,
     process::{self, Child, Output},
+    thread,
     time::Duration,
 };
 
@@ -104,7 +105,6 @@ pub fn run_game(
         if let Some(tas_view_process) = sys.processes_by_exact_name("TASView.exe").next() {
             info!("TASView is already running, killing it...");
             tas_view_process.kill();
-            // TODO test me
             if let Err(_) = helper::wait_for_process_exit("TASView.exe", Duration::from_secs(5)) {
                 warn!("TAView.exe did not exit in time");
             }
@@ -148,9 +148,9 @@ where
             .spawn()
             .context("Failed to run TASView")?;
 
-        // TODO test this
         helper::wait_for_process_start("TASView.exe", Duration::from_secs(5))
             .context("TASView failed to start in time")?;
+        thread::sleep(Duration::from_millis(100));
 
         helper::move_window_to_pos(-8, 350, "TASView")?;
 

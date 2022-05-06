@@ -6,8 +6,10 @@ use clap::*;
 pub struct Cli {
     #[clap(subcommand)]
     pub command: Commands,
+    /// Runs the command with no output.
     #[clap(long)]
     pub quiet: bool,
+    /// Runs the command with no colour.
     #[clap(long)]
     pub no_colour: bool,
 }
@@ -50,7 +52,6 @@ pub enum Commands {
     ///
     /// - This is the same as 'new' but it uses an existing directory.
     Init {
-        #[clap(long, short = 'n')]
         folder_name: String,
         #[clap(long, short)]
         game_name: Option<String>,

@@ -154,22 +154,30 @@ where
     if use_batch_scripts {
         info!("Creating batch scripts...");
 
+        // manager
+        files::write_manager_script_bat(project_dir.join(format!("{}.bat", crate::NAME)), None)
+            .context("Failed to create manager script")?;
+
         // run-game
-        files::write_manager_subcmd_script_bat(&project_dir, "run_game.bat", "run-game")
+        files::write_manager_script_bat(project_dir.join("run_game.bat"), Some("run-game"))
             .context(fail_message("run_game.bat"))?;
 
         // link files
-        files::write_manager_subcmd_script_bat(&project_dir, "link_files.bat", "link")
+        files::write_manager_script_bat(project_dir.join("link_files.bat"), Some("link"))
             .context(fail_message("link_files.bat"))?;
     } else {
         info!("Creating powershell scripts...");
 
+        // manager
+        files::write_manager_script(project_dir.join(format!("{}.ps1", crate::NAME)), None)
+            .context("Failed to create manager script")?;
+
         // run-game
-        files::write_manager_subcmd_script(&project_dir, "run_game.ps1", "run-game")
+        files::write_manager_script(project_dir.join("run_game.ps1"), Some("run-game"))
             .context(fail_message("run_game.ps1"))?;
 
         // link files
-        files::write_manager_subcmd_script(&project_dir, "link_hltas.ps1", "link")
+        files::write_manager_script(project_dir.join("link_hltas.ps1"), Some("link"))
             .context(fail_message("link_hltas.ps1"))?;
     }
 

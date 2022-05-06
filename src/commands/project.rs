@@ -23,6 +23,7 @@ pub fn new(
     game_name: &Option<String>,
     init_git: bool,
     no_init_git: bool,
+    use_batch_scripts: bool,
 ) -> Result<()> {
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load(cfg)?;
@@ -36,7 +37,13 @@ pub fn new(
         fs::create_dir(&project_dir).context("Failed to create project folder")?;
     }
 
-    init_project(project_dir, game_name, init_git, no_init_git)
+    init_project(
+        project_dir,
+        game_name,
+        init_git,
+        no_init_git,
+        use_batch_scripts,
+    )
 }
 
 pub fn init(
@@ -44,6 +51,7 @@ pub fn init(
     game_name: &Option<String>,
     init_git: bool,
     no_init_git: bool,
+    use_batch_scripts: bool,
 ) -> Result<()> {
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load(cfg)?;
@@ -55,7 +63,13 @@ pub fn init(
         bail!("Project folder does not exist\nHelp: Use 'new' to create a new project.");
     }
 
-    init_project(project_dir, game_name, init_git, no_init_git)
+    init_project(
+        project_dir,
+        game_name,
+        init_git,
+        no_init_git,
+        use_batch_scripts,
+    )
 }
 
 fn init_project<P>(
@@ -63,6 +77,7 @@ fn init_project<P>(
     game_name: &Option<String>,
     init_git: bool,
     no_init_git: bool,
+    use_batch_scripts: bool,
 ) -> Result<()>
 where
     P: AsRef<Path>,
@@ -120,24 +135,38 @@ where
     }
 
     // create scripts to run manager with subcommand
-    create_manager_scripts(&project_dir)?;
+    create_manager_scripts(&project_dir, use_batch_scripts)?;
 
     Ok(())
 }
 
-fn create_manager_scripts<P>(project_dir: P) -> Result<()>
+fn create_manager_scripts<P>(project_dir: P, use_batch_scripts: bool) -> Result<()>
 where
     P: AsRef<Path>,
 {
     let project_dir = project_dir.as_ref();
 
-    // run-game
-    files::write_run_manager_sub_command_script(&project_dir, "run_game.bat", "run-game")
-        .context("Failed to create run-game.bat script")?;
+    let fail_message = |script_name: &str| format!("Failed to create {script_name} script");
 
-    // link files
-    files::write_run_manager_sub_command_script(&project_dir, "link_hltas.bat", "link")
-        .context("Failed to create link_hltas.bat script")?;
+    if use_batch_scripts {
+        info!("Creating batch scripts...");
+
+        // run-game
+        files::write_manager_subcmd_script_bat(&project_dir, "run_game.bat", "run-game")
+            .context(fail_message("run_game.bat"))?;
+
+        // link files
+        files::write_manager_subcmd_script_bat(&project_dir, "link_files.bat", "link")
+            .context(fail_message("link_files.bat"))?;
+    } else {
+        // run-game
+        files::write_manager_subcmd_script(&project_dir, "run_game.ps1", "run-game")
+            .context(fail_message("run_game.ps1"))?;
+
+        // link files
+        files::write_manager_subcmd_script(&project_dir, "link_hltas.ps1", "link")
+            .context(fail_message("link_hltas.ps1"))?;
+    }
 
     Ok(())
 }

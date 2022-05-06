@@ -1,10 +1,13 @@
 use std::{
     fs::{self},
     path::{Path, PathBuf},
+    thread,
+    time::{Duration, SystemTime},
 };
 
 use anyhow::{bail, Context, Result};
 use sha2::Digest;
+use sysinfo::{ProcessRefreshKind, RefreshKind, System, SystemExt};
 
 use crate::cfg;
 
@@ -122,4 +125,28 @@ pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
 #[cfg(all(not(target_os = "windows"), not(target_os = "linux")))]
 pub fn move_window_to_pos(_x: i32, _y: i32, _process_name: &str) -> Result<()> {
     compile_error!("move_window_to_pos is not implemented for this platform");
+}
+
+pub fn wait_for_process_exit(name: &str, timeout: Duration) -> Result<()> {
+    let start_time = SystemTime::now();
+    let end_time = start_time + timeout;
+    let mut sys = System::new_with_specifics(
+        RefreshKind::default()
+            .with_processes(ProcessRefreshKind::everything().without_disk_usage()),
+    );
+
+    loop {
+        if sys.processes_by_exact_name(name).next().is_none() {
+            return Ok(());
+        }
+
+        let now = SystemTime::now();
+        if now > end_time {
+            bail!("Process {} did not exit in time", name);
+        }
+
+        thread::sleep(std::time::Duration::from_millis(100));
+
+        sys.refresh_processes();
+    }
 }

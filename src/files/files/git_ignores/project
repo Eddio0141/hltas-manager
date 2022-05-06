@@ -1,0 +1,5 @@
+*.bat
+*.ps1
+debug.log
+steam_appid.txt
+htmlcache

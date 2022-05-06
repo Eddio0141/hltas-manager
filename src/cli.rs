@@ -44,6 +44,8 @@ pub enum Commands {
         init_git: bool,
         #[clap(long)]
         no_init_git: bool,
+        #[clap(long)]
+        use_batch_scripts: bool,
     },
     /// Initializes a new project in an existing directory.
     ///
@@ -57,6 +59,8 @@ pub enum Commands {
         init_git: bool,
         #[clap(long)]
         no_init_git: bool,
+        #[clap(long)]
+        use_batch_scripts: bool,
     },
     /// Lists all available games.
     ///

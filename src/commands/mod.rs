@@ -11,7 +11,8 @@ use log::info;
 use crate::{
     cfg::Cfg,
     cli::{Cli, Commands},
-    helper::{self}, commands::sync_saves::sync_saves,
+    commands::sync_saves::sync_saves,
+    helper::{self},
 };
 
 use self::{
@@ -22,8 +23,13 @@ use self::{
     project::new,
     run_game::{run_game, RunGameFlags},
 };
+#[cfg(debug_assertions)]
+use log::debug;
 
 pub fn run(cli: Cli) -> Result<()> {
+    #[cfg(debug_assertions)]
+    debug!("running app with args: {:#?}", &cli);
+
     match &cli.command {
         Commands::Install {
             projects_dir,

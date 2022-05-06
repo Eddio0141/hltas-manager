@@ -20,6 +20,11 @@ fn main() {
 fn init_logger() {
     let mut builder = env_logger::builder();
 
+    #[cfg(debug_assertions)]
+    builder
+        .format_timestamp(None)
+        .filter_level(LevelFilter::Debug);
+    #[cfg(not(debug_assertions))]
     builder
         .format_timestamp(None)
         .filter_level(LevelFilter::Info);

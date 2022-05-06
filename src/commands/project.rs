@@ -159,6 +159,8 @@ where
         files::write_manager_subcmd_script_bat(&project_dir, "link_files.bat", "link")
             .context(fail_message("link_files.bat"))?;
     } else {
+        info!("Creating powershell scripts...");
+
         // run-game
         files::write_manager_subcmd_script(&project_dir, "run_game.ps1", "run-game")
             .context(fail_message("run_game.ps1"))?;
@@ -270,7 +272,6 @@ where
     let root_dir = root_dir.as_ref();
     let second_client_dir = match &cfg.no_client_dll_dir {
         Some(no_client_dll_dir) => {
-            info!("Checking if second client exists...");
             let second_client_dir = root_dir.join(no_client_dll_dir);
 
             if !second_client_dir.is_dir() {
@@ -290,7 +291,6 @@ fn game_dir_validate(cfg: &Cfg, game_name: &str) -> Result<()> {
     let game_dir = half_life_dir.join(game_name);
 
     // check if game is installed or not excluded
-    info!("Checking if game is installed...");
     let games = games::game_dir_types(half_life_dir)?;
 
     if cfg
@@ -302,7 +302,6 @@ fn game_dir_validate(cfg: &Cfg, game_name: &str) -> Result<()> {
     }
 
     // if game dir doesn't exist
-    info!("Checking if game dir exists...");
     if !game_dir.is_dir() {
         bail!(
             "Game '{game_name}' not found in the {} directory",
@@ -325,15 +324,14 @@ where
 
     if project_dir.join(".git").is_dir() {
         info!("Project already has a git repository, skipping git init");
-        return Ok(());
+    } else {
+        info!("Setting up git repository...");
+        process::Command::new("git")
+        .current_dir(&project_dir)
+        .arg("init")
+        .output()
+        .context("Failed to init git\nHelp: Use '--no-init-git' to skip git init\nNote: This process failing could be due to git not being installed")?;
     }
-
-    info!("Setting up git repository...");
-    process::Command::new("git")
-    .current_dir(&project_dir)
-    .arg("init")
-    .output()
-    .context("Failed to init git\nHelp: Use '--no-init-git' to skip git init\nNote: This process failing could be due to git not being installed")?;
 
     // add hardlink hook to .git/hooks/post-checkout
     info!("Adding hardlink hook to .git/hooks/post-checkout...");
@@ -344,7 +342,7 @@ where
     // create .gitignore file
     info!("Creating .gitignore file...");
     let gitignore_path = project_dir.join(".gitignore");
-    let gitignore = "*.bat";
+    let gitignore = "*.bat\n*.ps1";
 
     if gitignore_path.is_file() {
         // append to .gitignore

@@ -2,7 +2,7 @@ pub mod cfg;
 pub mod cli;
 pub mod commands;
 pub mod files;
-pub mod helper;
+pub(crate) mod helper;
 pub mod project_toml;
 
 pub const NAME: &str = env!("CARGO_PKG_NAME");

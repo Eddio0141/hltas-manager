@@ -2,10 +2,11 @@ use std::{
     env::current_dir,
     path::Path,
     process::{self, Child, Output},
+    time::Duration,
 };
 
 use anyhow::{bail, Context, Result};
-use log::info;
+use log::{info, warn};
 use sysinfo::{ProcessExt, System, SystemExt};
 
 use crate::{
@@ -103,8 +104,10 @@ pub fn run_game(
         if let Some(tas_view_process) = sys.processes_by_exact_name("TASView.exe").next() {
             info!("TASView is already running, killing it...");
             tas_view_process.kill();
-            // TODO wait for it to exit
-            std::thread::sleep(std::time::Duration::from_millis(500));
+            // TODO test me
+            if let Err(_) = helper::wait_for_process_exit("TASView.exe", Duration::from_secs(5)) {
+                warn!("TAView.exe did not exit in time");
+            }
         }
 
         info!("Running TASView...");
@@ -145,8 +148,9 @@ where
             .spawn()
             .context("Failed to run TASView")?;
 
-        // TODO wait for TASView to start
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        // TODO test this
+        helper::wait_for_process_start("TASView.exe", Duration::from_secs(5))
+            .context("TASView failed to start in time")?;
 
         helper::move_window_to_pos(-8, 350, "TASView")?;
 

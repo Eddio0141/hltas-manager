@@ -2,7 +2,10 @@
 
 bash_dir=$(cd "$(dirname "$0")" && pwd)
 project_dir="$(dirname "$(dirname "$bash_dir")")"
-link_dir="$(dirname "$(dirname "$project_dir")")/Half-Life"
+root_dir="$(dirname "$(dirname "$project_dir")")"
+link_dir="$root_dir/HALF_LIFE_DIR"
+link_secondary=NO_CLIENT_DLL_PRESENT
+link_dir2="$root_dir/NO_CLIENT_DLL"
 
 for file in "$project_dir/"*.hltas; do
 	file="$(basename "$file")"
@@ -13,6 +16,14 @@ for file in "$project_dir/"*.hltas; do
 	if test -f "$link_path"; then
 		rm "$link_path"
 	fi
-
 	ln "$file_path" "$link_path"
+	
+	if $link_secondary; then
+		link_path="$link_dir2/$file"
+		if test -f "$link_path"; then
+			rm "$link_path"
+		fi
+		ln "$file_path" "$link_path"
+	fi
+
 done

@@ -9,10 +9,9 @@ use lazy_static::lazy_static;
 use log::info;
 use sha2::Digest;
 
-use crate::helper;
+use crate::{cfg::Cfg, helper};
 
-const HARD_LINK_POST_CHECKOUT_HOOK: &[u8] =
-    include_bytes!("../../resource/git_hooks/post-checkout");
+const HARD_LINK_POST_CHECKOUT_HOOK: &str = include_str!("../resource/git_hooks/post-checkout");
 lazy_static! {
     static ref HARD_LINK_POST_CHECKOUT_HOOK_SHA_256: Vec<u8> = {
         let mut hasher = sha2::Sha256::new();
@@ -21,9 +20,10 @@ lazy_static! {
     };
 }
 
-pub fn write_hard_link_shell_hook<P>(path: P) -> Result<()>
+pub fn write_hard_link_shell_hook<P, P2>(path: P, cfg: &Cfg) -> Result<()>
 where
     P: AsRef<Path>,
+    P2: AsRef<Path>,
 {
     let path = path.as_ref();
 
@@ -45,24 +45,49 @@ where
         File::create(path).context("Failed to create ./git/hooks/post-checkout")?
     };
 
+    let hook = {
+        let mut hook = HARD_LINK_POST_CHECKOUT_HOOK.replace(
+            "HALF_LIFE_DIR",
+            &cfg.half_life_dir
+                .file_name()
+                .context("Failed to get half-life dir name")?
+                .to_string_lossy(),
+        );
+
+        let no_client_dll_present = "NO_CLIENT_DLL_PRESENT";
+
+        hook = match &cfg.no_client_dll_dir {
+            Some(no_client_dll_dir) => hook.replace(no_client_dll_present, "true").replace(
+                "NO_CLIENT_DLL_DIR",
+                &no_client_dll_dir
+                    .file_name()
+                    .context("Failed to get no-client-dll dir name")?
+                    .to_string_lossy(),
+            ),
+            None => hook.replace(no_client_dll_present, "false"),
+        };
+
+        hook
+    };
+
     info!("Installing post-checkout hook");
-    file.write_all(HARD_LINK_POST_CHECKOUT_HOOK)
+    file.write_all(hook.as_bytes())
         .context("Failed to write hard-link hook to ./git/hooks/post-checkout")?;
 
     Ok(())
 }
 
-const HLTAS_CFG: &[u8] = include_bytes!("../../resource/cfgs/hltas.cfg");
-const INGAME_CFG: &[u8] = include_bytes!("../../resource/cfgs/ingame.cfg");
-const RECORD_CFG: &[u8] = include_bytes!("../../resource/cfgs/record.cfg");
-const EDITOR_CFG: &[u8] = include_bytes!("../../resource/cfgs/editor.cfg");
-const CAM_CFG: &[u8] = include_bytes!("../../resource/cfgs/cam.cfg");
+const HLTAS_CFG: &[u8] = include_bytes!("../resource/cfgs/hltas.cfg");
+const INGAME_CFG: &[u8] = include_bytes!("../resource/cfgs/ingame.cfg");
+const RECORD_CFG: &[u8] = include_bytes!("../resource/cfgs/record.cfg");
+const EDITOR_CFG: &[u8] = include_bytes!("../resource/cfgs/editor.cfg");
+const CAM_CFG: &[u8] = include_bytes!("../resource/cfgs/cam.cfg");
 
-const HLTAS_MIN_CFG: &[u8] = include_bytes!("../../resource/cfgs/hltas_min.cfg");
-const INGAME_MIN_CFG: &[u8] = include_bytes!("../../resource/cfgs/ingame_min.cfg");
-const RECORD_MIN_CFG: &[u8] = include_bytes!("../../resource/cfgs/record_min.cfg");
-const EDITOR_MIN_CFG: &[u8] = include_bytes!("../../resource/cfgs/editor_min.cfg");
-const CAM_MIN_CFG: &[u8] = include_bytes!("../../resource/cfgs/cam_min.cfg");
+const HLTAS_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/hltas_min.cfg");
+const INGAME_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/ingame_min.cfg");
+const RECORD_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/record_min.cfg");
+const EDITOR_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/editor_min.cfg");
+const CAM_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/cam_min.cfg");
 
 pub fn write_cfgs<P>(path: P, minimum: bool) -> Result<()>
 where
@@ -154,9 +179,9 @@ where
 }
 
 #[cfg(target_os = "windows")]
-const ENABLE_VANILLA_GAME: &str = include_str!("../../resource/bat/enable_vanilla_game.bat");
+const ENABLE_VANILLA_GAME: &str = include_str!("../resource/bat/enable_vanilla_game.bat");
 #[cfg(target_os = "windows")]
-const DISABLE_VANILLA_GAME: &str = include_str!("../../resource/bat/disable_vanilla_game.bat");
+const DISABLE_VANILLA_GAME: &str = include_str!("../resource/bat/disable_vanilla_game.bat");
 
 #[cfg(target_os = "windows")]
 pub fn write_toggle_vanilla_game<P, P2>(path: P, game_dir: P2) -> Result<()>
@@ -202,9 +227,9 @@ where
 }
 
 #[cfg(target_os = "windows")]
-const ENABLE_SIM_CLIENT: &str = include_str!("../../resource/bat/enable_sim_client.bat");
+const ENABLE_SIM_CLIENT: &str = include_str!("../resource/bat/enable_sim_client.bat");
 #[cfg(target_os = "windows")]
-const DISABLE_SIM_CLIENT: &str = include_str!("../../resource/bat/disable_sim_client.bat");
+const DISABLE_SIM_CLIENT: &str = include_str!("../resource/bat/disable_sim_client.bat");
 
 #[cfg(target_os = "windows")]
 pub fn write_toggle_sim_client<P, P2>(dir: P, half_life_dir: P2) -> Result<()>
@@ -253,13 +278,13 @@ where
 }
 
 #[cfg(target_os = "windows")]
-const RUN_MANAGER_EXEC_BASE_BAT: &str = include_str!("../../resource/bat/run_manager_base.bat");
+const RUN_MANAGER_EXEC_BASE_BAT: &str = include_str!("../resource/bat/run_manager_base.bat");
 #[cfg(target_os = "windows")]
-const RUN_MANAGER_EXEC_BASE_PS1: &str = include_str!("../../resource/ps1/run_manager_base.ps1");
+const RUN_MANAGER_EXEC_BASE_PS1: &str = include_str!("../resource/ps1/run_manager_base.ps1");
 #[cfg(target_os = "windows")]
-const RUN_MANAGER_BAT: &str = include_str!("../../resource/bat/run_manager.bat");
+const RUN_MANAGER_BAT: &str = include_str!("../resource/bat/run_manager.bat");
 #[cfg(target_os = "windows")]
-const RUN_MANAGER_PS1: &str = include_str!("../../resource/ps1/run_manager.ps1");
+const RUN_MANAGER_PS1: &str = include_str!("../resource/ps1/run_manager.ps1");
 
 const RUN_MANAGER_SUB_COMMAND: &str = "SUB_COMMAND";
 

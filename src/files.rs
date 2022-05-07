@@ -20,10 +20,9 @@ lazy_static! {
     };
 }
 
-pub fn write_hard_link_shell_hook<P, P2>(path: P, cfg: &Cfg) -> Result<()>
+pub fn write_hard_link_shell_hook<P>(path: P, cfg: &Cfg) -> Result<()>
 where
     P: AsRef<Path>,
-    P2: AsRef<Path>,
 {
     let path = path.as_ref();
 

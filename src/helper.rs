@@ -77,18 +77,72 @@ where
 
 #[cfg(target_os = "windows")]
 pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
-    use winapi::um::winuser::{SetWindowPos, HWND_NOTOPMOST, SWP_NOSIZE, SWP_SHOWWINDOW};
+    use std::mem::size_of;
 
-    let hwnd = unsafe {
-        winapi::um::winuser::FindWindowA(
-            std::ptr::null(),
-            process_name.as_bytes().as_ptr() as *const i8,
-        )
+    use winapi::{
+        shared::minwindef::{FALSE, MAX_PATH},
+        um::{
+            handleapi::CloseHandle,
+            tlhelp32::{
+                CreateToolhelp32Snapshot, Process32Next, PROCESSENTRY32, TH32CS_SNAPPROCESS,
+            },
+            winuser::{SetWindowPos, HWND_NOTOPMOST, SWP_NOSIZE, SWP_SHOWWINDOW},
+        },
     };
 
-    if hwnd.is_null() {
-        bail!("Failed to find window");
-    }
+    let process_name = process_name.bytes().map(|b| b as i8).collect::<Vec<i8>>();
+
+    let hwnd = {
+        let mut process_entry = PROCESSENTRY32 {
+            dwSize: size_of::<PROCESSENTRY32>() as u32,
+            cntUsage: 0,
+            th32ProcessID: 0,
+            th32DefaultHeapID: 0,
+            th32ModuleID: 0,
+            cntThreads: 0,
+            th32ParentProcessID: 0,
+            pcPriClassBase: 0,
+            dwFlags: 0,
+            szExeFile: [0; MAX_PATH],
+        };
+
+        let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+
+        if snapshot.is_null() {
+            bail!("Failed to create snapshot");
+        }
+
+        let mut first = true;
+        let mut hwnd = None;
+
+        loop {
+            if first {
+                first = false;
+            } else {
+                let has_next = unsafe { Process32Next(snapshot, &mut process_entry) };
+
+                if has_next == FALSE {
+                    break;
+                }
+            }
+
+            if process_entry.szExeFile == process_name.as_slice() {
+                hwnd = Some(process_entry.th32ProcessID);
+                break;
+            }
+        }
+
+        unsafe {
+            CloseHandle(snapshot);
+        }
+
+        hwnd
+    };
+
+    let hwnd = match hwnd {
+        Some(hwnd) => hwnd as *mut _,
+        None => bail!("Failed to find window"),
+    };
 
     unsafe {
         SetWindowPos(
@@ -100,6 +154,11 @@ pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
             0,
             SWP_NOSIZE | SWP_SHOWWINDOW,
         );
+    }
+
+    // close handle
+    unsafe {
+        CloseHandle(hwnd as *mut _);
     }
 
     Ok(())

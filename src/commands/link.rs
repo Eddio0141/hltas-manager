@@ -71,7 +71,10 @@ pub fn link() -> Result<()> {
         info!("Linking {}", hltas.display());
         let game_dir_hltas = half_life_dir.join(hltas.file_name().unwrap());
         if game_dir_hltas.is_file() {
-            info!("File already exists, removing");
+            info!(
+                "File already exists in {}, removing",
+                game_dir_hltas.display()
+            );
             fs::remove_file(&game_dir_hltas).context("Failed to remove hltas")?;
         }
         fs::hard_link(&hltas, &game_dir_hltas).context("Failed to hard link hltas")?;
@@ -81,7 +84,10 @@ pub fn link() -> Result<()> {
             let game_dir_hltas = root_dir.join(second_game_dir.join(hltas.file_name().unwrap()));
 
             if game_dir_hltas.is_file() {
-                info!("File already exists, removing");
+                info!(
+                    "File already exists in {}, removing",
+                    game_dir_hltas.display()
+                );
                 fs::remove_file(&game_dir_hltas).context("Failed to remove hltas")?;
             }
             fs::hard_link(&hltas, &game_dir_hltas).context("Failed to hard link hltas")?;

@@ -134,7 +134,7 @@ where
     };
 
     if init_git {
-        set_up_git(&project_dir)?;
+        set_up_git(&project_dir, &cfg)?;
     }
 
     // create scripts to run manager with subcommand
@@ -336,7 +336,7 @@ lazy_static! {
     };
 }
 
-fn set_up_git<P>(project_dir: P) -> Result<()>
+fn set_up_git<P>(project_dir: P, cfg: &Cfg) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -356,7 +356,7 @@ where
     // add hardlink hook to .git/hooks/post-checkout
     let post_checkout_hook_path = project_dir.join(".git/hooks/post-checkout");
 
-    files::write_hard_link_shell_hook(post_checkout_hook_path)?;
+    files::write_hard_link_shell_hook(post_checkout_hook_path, cfg)?;
 
     // create .gitignore file
     let gitignore_path = project_dir.join(".gitignore");

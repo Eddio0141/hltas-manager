@@ -7,8 +7,8 @@ use std::{
 };
 
 use anyhow::{bail, Context, Result};
-use log::{debug, info, warn};
-use sysinfo::{ProcessExt, System, SystemExt};
+use log::{debug, info};
+use sysinfo::{ProcessRefreshKind, RefreshKind, System, SystemExt};
 
 use crate::{
     cfg::{self, Cfg},
@@ -34,8 +34,6 @@ pub fn run_game(
     params: &Option<Vec<String>>,
     game_override: &Option<String>,
 ) -> Result<()> {
-    let sys = System::new_all();
-
     let current_dir_fail = "Failed to get current directory";
 
     let (project_dir, root_dir, cfg) = {
@@ -102,15 +100,6 @@ pub fn run_game(
         run_r_input(r_input_exe)?;
     }
     if !run_game_flags.no_tas_view && !run_game_flags.sim {
-        if let Some(tas_view_process) = sys.processes_by_exact_name("TASView.exe").next() {
-            info!("TASView is already running, killing it...");
-            tas_view_process.kill();
-            if helper::wait_for_process_exit("TASView.exe", Duration::from_secs(5)).is_err() {
-                warn!("TAView.exe did not exit in time");
-            }
-        }
-
-        info!("Running TASView...");
         run_tas_view(tas_view_dir)?;
     }
 
@@ -143,22 +132,36 @@ where
     let tas_view_exe = tas_view_dir.join("TASView.exe");
 
     if tas_view_exe.is_file() {
-        // we completely ignore the output of TASView.exe
-        let handle = process::Command::new(tas_view_exe)
-            .current_dir(tas_view_dir)
-            .stderr(Stdio::null())
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .spawn()
-            .context("Failed to run TASView")?;
+        // only run if TASView.exe isn't already running
+        let sys = System::new_with_specifics(
+            RefreshKind::new().with_processes(ProcessRefreshKind::new().with_disk_usage()),
+        );
 
-        helper::wait_for_process_start("TASView.exe", Duration::from_secs(5))
-            .context("TASView failed to start in time")?;
-        thread::sleep(Duration::from_millis(100));
+        let handle = if sys.processes_by_exact_name("TASView.exe").next().is_none() {
+            info!("Starting TASView...");
 
+            // we completely ignore the output of TASView.exe
+            let handle = process::Command::new(tas_view_exe)
+                .current_dir(tas_view_dir)
+                .stderr(Stdio::null())
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .spawn()
+                .context("Failed to run TASView")?;
+
+            helper::wait_for_process_start("TASView.exe", Duration::from_secs(5))
+                .context("TASView failed to start in time")?;
+            thread::sleep(Duration::from_millis(100));
+
+            Some(handle)
+        } else {
+            None
+        };
+
+        // move window
         helper::move_window_to_pos(-8, 350, "TASView")?;
 
-        Ok(Some(handle))
+        Ok(handle)
     } else {
         Ok(None)
     }

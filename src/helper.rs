@@ -1,13 +1,22 @@
 use std::{
-    fs::{self},
+    fs,
     path::{Path, PathBuf},
     thread,
     time::{Duration, SystemTime},
 };
 
 use anyhow::{bail, Context, Result};
+#[cfg(target_os = "windows")]
+use lazy_static::lazy_static;
 use sha2::Digest;
+#[cfg(target_os = "windows")]
+use std::sync::Mutex;
 use sysinfo::{ProcessRefreshKind, RefreshKind, System, SystemExt};
+#[cfg(target_os = "windows")]
+use winapi::{
+    shared::minwindef::FALSE,
+    um::winuser::{SetWindowPos, HWND_NOTOPMOST, SWP_NOSIZE, SWP_SHOWWINDOW},
+};
 
 use crate::cfg;
 
@@ -76,89 +85,54 @@ where
 }
 
 #[cfg(target_os = "windows")]
-pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
-    use std::mem::size_of;
-
+pub fn move_window_to_pos(x: i32, y: i32, window_title: &str) -> Result<()> {
     use winapi::{
-        shared::minwindef::{FALSE, MAX_PATH},
-        um::{
-            handleapi::CloseHandle,
-            tlhelp32::{
-                CreateToolhelp32Snapshot, Process32Next, PROCESSENTRY32, TH32CS_SNAPPROCESS,
-            },
-            winuser::{SetWindowPos, HWND_NOTOPMOST, SWP_NOSIZE, SWP_SHOWWINDOW},
+        shared::{
+            minwindef::{BOOL, LPARAM, TRUE},
+            windef::HWND,
         },
+        um::winuser::{EnumWindows, GetWindowTextA, GetWindowTextLengthA},
     };
 
-    let process_name = process_name.bytes().map(|b| b as i8).collect::<Vec<i8>>();
-
-    let hwnd = {
-        let mut process_entry = PROCESSENTRY32 {
-            dwSize: size_of::<PROCESSENTRY32>() as u32,
-            cntUsage: 0,
-            th32ProcessID: 0,
-            th32DefaultHeapID: 0,
-            th32ModuleID: 0,
-            cntThreads: 0,
-            th32ParentProcessID: 0,
-            pcPriClassBase: 0,
-            dwFlags: 0,
-            szExeFile: [0; MAX_PATH],
-        };
-
-        let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
-
-        if snapshot.is_null() {
-            bail!("Failed to create snapshot");
-        }
-
-        let mut first = true;
-        let mut hwnd = None;
-
-        loop {
-            if first {
-                first = false;
-            } else {
-                let has_next = unsafe { Process32Next(snapshot, &mut process_entry) };
-
-                if has_next == FALSE {
-                    break;
-                }
-            }
-
-            if process_entry.szExeFile == process_name.as_slice() {
-                hwnd = Some(process_entry.th32ProcessID);
-                break;
-            }
-        }
-
-        unsafe {
-            CloseHandle(snapshot);
-        }
-
-        hwnd
-    };
-
-    let hwnd = match hwnd {
-        Some(hwnd) => hwnd as *mut _,
-        None => bail!("Failed to find window"),
-    };
-
-    unsafe {
-        SetWindowPos(
-            hwnd,
-            HWND_NOTOPMOST,
-            x,
-            y,
-            0,
-            0,
-            SWP_NOSIZE | SWP_SHOWWINDOW,
-        );
+    // hack to pass arguments to the callback function
+    lazy_static! {
+        static ref WINDOW_TITLE: Mutex<String> = Mutex::new(String::new());
+        static ref X: Mutex<i32> = Mutex::new(0);
+        static ref Y: Mutex<i32> = Mutex::new(0);
     }
 
-    // close handle
-    unsafe {
-        CloseHandle(hwnd as *mut _);
+    *WINDOW_TITLE.lock().unwrap() = window_title.to_string();
+    *X.lock().unwrap() = x;
+    *Y.lock().unwrap() = y;
+
+    unsafe extern "system" fn enum_windows_proc(hwnd: HWND, _: LPARAM) -> BOOL {
+        let mut title = Vec::with_capacity(1024);
+
+        GetWindowTextA(hwnd, title.as_mut_ptr(), title.capacity() as i32);
+        title.set_len(GetWindowTextLengthA(hwnd) as usize);
+
+        let title = title.into_iter().map(|c| c as u8).collect::<Vec<u8>>();
+        if let Ok(title) = String::from_utf8(title) {
+            if title == *WINDOW_TITLE.lock().unwrap() {
+                SetWindowPos(
+                    hwnd,
+                    HWND_NOTOPMOST,
+                    *X.lock().unwrap(),
+                    *Y.lock().unwrap(),
+                    0,
+                    0,
+                    SWP_NOSIZE | SWP_SHOWWINDOW,
+                );
+            }
+        }
+
+        TRUE
+    }
+
+    let enum_success = unsafe { EnumWindows(Some(enum_windows_proc), 0) };
+
+    if enum_success == FALSE {
+        bail!("Failed to enumerate windows");
     }
 
     Ok(())
@@ -184,30 +158,6 @@ pub fn move_window_to_pos(x: i32, y: i32, process_name: &str) -> Result<()> {
 #[cfg(all(not(target_os = "windows"), not(target_os = "linux")))]
 pub fn move_window_to_pos(_x: i32, _y: i32, _process_name: &str) -> Result<()> {
     compile_error!("move_window_to_pos is not implemented for this platform");
-}
-
-pub fn wait_for_process_exit(name: &str, timeout: Duration) -> Result<()> {
-    let start_time = SystemTime::now();
-    let end_time = start_time + timeout;
-    let mut sys = System::new_with_specifics(
-        RefreshKind::default()
-            .with_processes(ProcessRefreshKind::everything().without_disk_usage()),
-    );
-
-    loop {
-        if sys.processes_by_exact_name(name).next().is_none() {
-            return Ok(());
-        }
-
-        let now = SystemTime::now();
-        if now > end_time {
-            bail!("Process {} did not exit in time", name);
-        }
-
-        thread::sleep(std::time::Duration::from_millis(100));
-
-        sys.refresh_processes();
-    }
 }
 
 pub fn wait_for_process_start(name: &str, timeout: Duration) -> Result<()> {

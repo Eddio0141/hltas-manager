@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{bail, Context, Result};
-use log::{debug, info};
+use log::{debug, error, info};
 use sysinfo::{ProcessRefreshKind, RefreshKind, System, SystemExt};
 
 use crate::{
@@ -16,24 +16,38 @@ use crate::{
     project_toml::{self, ProjectToml},
 };
 
-pub struct RunGameFlags {
-    pub sim: bool,
-    pub low: bool,
-    pub vanilla_game: bool,
-    pub record: bool,
-    pub no_bxt: bool,
+pub struct RunGameMiscFlags {
     pub r_input: bool,
     pub no_tas_view: bool,
 }
 
+pub struct RunGameFlags<'a> {
+    pub low: bool,
+    pub vanilla_game: bool,
+    pub width: u32,
+    pub height: u32,
+    pub params: &'a Option<Vec<String>>,
+    pub game_override: &'a Option<String>,
+}
+
+pub struct RunGameBxtFlags<'a> {
+    pub run_script: &'a Option<String>,
+    pub optim_games: &'a Option<u8>,
+    pub sim: bool,
+    pub record: bool,
+    pub no_bxt: bool,
+}
+
 pub fn run_game(
+    run_game_misc_flags: RunGameMiscFlags,
     run_game_flags: RunGameFlags,
-    width: u32,
-    height: u32,
-    run_script: &Option<String>,
-    params: &Option<Vec<String>>,
-    game_override: &Option<String>,
+    run_game_bxt_flags: RunGameBxtFlags,
 ) -> Result<()> {
+    let RunGameMiscFlags {
+        r_input,
+        no_tas_view,
+    } = run_game_misc_flags;
+
     let current_dir_fail = "Failed to get current directory";
 
     let (project_dir, root_dir, cfg) = {
@@ -85,21 +99,15 @@ pub fn run_game(
         root_dir,
         &cfg,
         &project_toml,
-        HLArgs {
-            hl_exe_args: params,
-            run_game_flags: &run_game_flags,
-            width,
-            height,
-            run_script,
-            game_override,
-        },
+        &run_game_flags,
+        &run_game_bxt_flags,
     )?;
 
-    if run_game_flags.r_input {
+    if r_input {
         info!("Running RInput...");
         run_r_input(r_input_exe)?;
     }
-    if !run_game_flags.no_tas_view && !run_game_flags.sim {
+    if !(no_tas_view || run_game_bxt_flags.sim || run_game_bxt_flags.optim_games.is_some()) {
         run_tas_view(tas_view_dir)?;
     }
 
@@ -167,37 +175,36 @@ where
     }
 }
 
-struct HLArgs<'a> {
-    hl_exe_args: &'a Option<Vec<String>>,
-    run_game_flags: &'a RunGameFlags,
-    width: u32,
-    height: u32,
-    run_script: &'a Option<String>,
-    game_override: &'a Option<String>,
-}
-
 fn run_hl<P>(
     root_dir: P,
     cfg: &Cfg,
     project_toml: &Option<ProjectToml>,
-    hl_args: HLArgs,
-) -> Result<Output>
+    run_game_flags: &RunGameFlags,
+    run_game_bxt_flags: &RunGameBxtFlags,
+) -> Result<Option<Output>>
 where
     P: AsRef<Path>,
 {
-    let HLArgs {
-        hl_exe_args,
-        run_game_flags,
+    let RunGameFlags {
+        low,
+        vanilla_game,
         width,
         height,
-        run_script,
+        params,
         game_override,
-    } = hl_args;
+    } = run_game_flags;
+    let RunGameBxtFlags {
+        run_script,
+        optim_games,
+        sim,
+        record,
+        no_bxt,
+    } = run_game_bxt_flags;
 
     let root_dir = root_dir.as_ref();
     let injector_exe = root_dir.join("Bunnymod XT").join("Injector.exe");
 
-    let hl_dir = if run_game_flags.vanilla_game || run_game_flags.sim {
+    let hl_dir = if *vanilla_game || *sim || optim_games.is_some() {
         root_dir.join(&cfg.half_life_dir)
     } else {
         match &cfg.no_client_dll_dir {
@@ -214,7 +221,7 @@ where
         },
     };
 
-    let hl_exe_args = {
+    let params = {
         let mut args = Vec::new();
 
         args.push("-noforcemparms".to_string());
@@ -226,10 +233,10 @@ where
 
         args.push(format!("-game {game}"));
 
-        if run_game_flags.sim {
+        if *sim {
             args.push("+bxt_tas_become_simulator_client".to_string());
         }
-        if run_game_flags.low {
+        if *low {
             args.push("-nofbo".to_string());
             args.push("-nomsaa".to_string());
             args.push("+gl_spriteblend 0".to_string());
@@ -242,15 +249,15 @@ where
             args.push("+violence_hblood 0".to_string());
             args.push("+violence_hgibs 0".to_string());
         }
-        if run_game_flags.record {
+        if *record {
             args.push("-noborder sdl_createwindow".to_string());
         }
         if let Some(run_script) = run_script {
             args.push(format!("+bxt_tas_loadscript {run_script}"));
         }
 
-        if let Some(hl_exe_args) = hl_exe_args {
-            for arg in hl_exe_args {
+        if let Some(params) = params {
+            for arg in params {
                 args.push(arg.to_string());
             }
         }
@@ -263,25 +270,62 @@ where
             .collect::<Vec<_>>()
     };
 
-    let output = if run_game_flags.no_bxt {
+    let output = if *no_bxt {
         // just run hl.exe
-        process::Command::new(hl_exe)
-            .args(hl_exe_args)
-            .current_dir(hl_dir)
-            .output()
+        // no_bxt conflicts with optim_games so no need to run multiple times here
+        Some(
+            process::Command::new(hl_exe)
+                .args(params)
+                .current_dir(hl_dir)
+                .output(),
+        )
     } else {
-        // run injector with hl.exe as an extra argument
-        let mut cmd = process::Command::new(injector_exe);
+        match optim_games {
+            Some(optim_games) => {
+                for i in 0..*optim_games {
+                    let bxt_result = process::Command::new(&injector_exe)
+                        .arg(&hl_exe)
+                        .args(&params)
+                        .current_dir(&hl_dir)
+                        .output();
 
-        if let Some(run_script) = run_script {
-            cmd.env("BXT_SCRIPT", run_script);
+                    match bxt_result {
+                        Ok(_) => info!(
+                            "Successfully launched {} out of {} games",
+                            i + 1,
+                            optim_games
+                        ),
+                        Err(err) => error!(
+                            "Failed to launch {} out of {} games: {}",
+                            i + 1,
+                            optim_games,
+                            err
+                        ),
+                    }
+
+                    // TODO wait for the game to start in a better way
+                    thread::sleep(Duration::from_secs(6));
+                }
+
+                None
+            }
+            None => {
+                // run injector with hl.exe as an extra argument
+                let mut cmd = process::Command::new(injector_exe);
+
+                if let Some(run_script) = run_script {
+                    cmd.env("BXT_SCRIPT", run_script);
+                }
+
+                cmd.arg(hl_exe).args(params).current_dir(hl_dir);
+
+                Some(cmd.output())
+            }
         }
+    };
 
-        cmd.arg(hl_exe).args(hl_exe_args).current_dir(hl_dir);
-
-        cmd.output()
+    match output {
+        Some(output) => Ok(Some(output.context("Failed to run Half-Life")?)),
+        None => Ok(None),
     }
-    .context("Failed to run Half-Life")?;
-
-    Ok(output)
 }

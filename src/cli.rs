@@ -72,6 +72,9 @@ pub enum Commands {
     ///
     /// - Requires you to run from the project directory.
     RunGame {
+        /// Runs multiple vanilla games.
+        #[clap(long, conflicts_with_all = &["sim", "vanilla-game", "record", "no-bxt", "run-script", "r-input", "no-tas-view"])]
+        optim_games: Option<u8>,
         /// Runs the simulator client.
         #[clap(long, conflicts_with_all = &["low", "vanilla-game", "record", "width", "height", "no-bxt", "run-script"])]
         sim: bool,
@@ -89,7 +92,8 @@ pub enum Commands {
             long,
             default_value("1280"),
             default_value_if("sim", None, Some("100")),
-            default_value_if("record", None, Some("1920"))
+            default_value_if("record", None, Some("1920")),
+            default_value_if("optim-games", None, Some("100"))
         )]
         width: u32,
         /// Sets the window height.
@@ -97,7 +101,8 @@ pub enum Commands {
             long,
             default_value("800"),
             default_value_if("sim", None, Some("100")),
-            default_value_if("record", None, Some("1080"))
+            default_value_if("record", None, Some("1080")),
+            default_value_if("optim-games", None, Some("100"))
         )]
         height: u32,
         /// Runs the game without bxt.

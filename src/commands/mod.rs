@@ -11,18 +11,11 @@ use log::info;
 use crate::{
     cfg::Cfg,
     cli::{Cli, Commands},
-    commands::sync_saves::sync_saves,
+    commands::{run_game::RunGameFlags, sync_saves::sync_saves},
     helper::{self},
 };
 
-use self::{
-    games::games,
-    install::install,
-    link::link,
-    project::init,
-    project::new,
-    run_game::{run_game, RunGameFlags},
-};
+use self::{games::games, install::install, link::link, project::init, project::new, run_game::*};
 #[cfg(debug_assertions)]
 use log::debug;
 
@@ -94,22 +87,28 @@ pub fn run(cli: Cli) -> Result<()> {
             r_input,
             no_tas_view,
             game_override,
+            optim_games,
         } => {
             run_game(
-                RunGameFlags {
-                    sim: *sim,
-                    low: *low,
-                    vanilla_game: *vanilla_game,
-                    record: *record,
-                    no_bxt: *no_bxt,
+                RunGameMiscFlags {
                     r_input: *r_input,
                     no_tas_view: *no_tas_view,
                 },
-                *width,
-                *height,
-                run_script,
-                params,
-                game_override,
+                RunGameFlags {
+                    low: *low,
+                    vanilla_game: *vanilla_game,
+                    width: *width,
+                    height: *height,
+                    params,
+                    game_override,
+                },
+                RunGameBxtFlags {
+                    run_script,
+                    optim_games,
+                    sim: *sim,
+                    record: *record,
+                    no_bxt: *no_bxt,
+                },
             )?;
         }
         Commands::Link => {

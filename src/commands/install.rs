@@ -210,8 +210,12 @@ fn write_optim_rhai_script<P: AsRef<Path>>(root_dir: P, cfg: &Cfg) -> Result<()>
     let script_path = root_dir.join(script_name);
 
     // we write the optim rhai script to the root directory
-    info!("Writing optim.rhai script to the root directory");
-    files::write_optim_rhai_script(&script_path)?;
+    if script_path.is_file() {
+        info!("optim.rhai already exists, skipping");
+    } else {
+        info!("Writing optim.rhai script to the root directory");
+        files::write_optim_rhai_script(&script_path)?;
+    }
 
     // hard-link to half-life directories
     info!("Hard-linking optim.rhai script to the Half-Life directory");

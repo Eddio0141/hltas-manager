@@ -210,16 +210,22 @@ fn write_optim_rhai_script<P: AsRef<Path>>(root_dir: P, cfg: &Cfg) -> Result<()>
     let script_path = root_dir.join(script_name);
 
     // we write the optim rhai script to the root directory
+    info!("Writing optim.rhai script to the root directory");
     files::write_optim_rhai_script(&script_path)?;
 
     // hard-link to half-life directories
-    fs::hard_link(&script_path, root_dir.join(&cfg.half_life_dir))
-        .context("Failed to hard-link optim.rhai to Half-Life directory")?;
+    info!("Hard-linking optim.rhai script to the Half-Life directory");
+    fs::hard_link(
+        &script_path,
+        root_dir.join(&cfg.half_life_dir).join(script_name),
+    )
+    .context("Failed to hard-link optim.rhai to Half-Life directory")?;
 
     if let Some(no_client_dll_dir) = &cfg.no_client_dll_dir {
         let no_client_dll_dir = root_dir.join(no_client_dll_dir);
 
-        fs::hard_link(&script_path, no_client_dll_dir.join(&cfg.half_life_dir))
+        info!("Hard-linking optim.rhai script to the second game directory");
+        fs::hard_link(&script_path, no_client_dll_dir.join(script_name))
             .context("Failed to hard-link optim.rhai to second Half-Life directory")?;
     }
 

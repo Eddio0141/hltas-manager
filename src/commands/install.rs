@@ -177,6 +177,52 @@ pub fn install(
         bail!(format!("{sim_dll} not found in the root directory"));
     }
 
+    stop_tas_script(&root_dir, &cfg)?;
+
+    write_optim_rhai_script(&root_dir, &cfg)?;
+
+    Ok(())
+}
+
+fn stop_tas_script<P: AsRef<Path>>(root_dir: P, cfg: &Cfg) -> Result<()> {
+    let root_dir = root_dir.as_ref();
+    let half_life_dir = root_dir.join(&cfg.half_life_dir);
+    let script_name = "stop.hltas";
+
+    info!("Writing stop.hltas script to the Half-Life directory");
+    files::write_stop_tas_script(half_life_dir.join(script_name))
+        .context("Failed to write stop tas script for Half-Life dir")?;
+
+    if let Some(no_client_dll_dir) = &cfg.no_client_dll_dir {
+        let no_client_dll_dir = root_dir.join(no_client_dll_dir);
+
+        info!("Writing stop.hltas script to the second game directory");
+        files::write_stop_tas_script(no_client_dll_dir.join(script_name))
+            .context("Failed to write stop tas script for second Half-Life dir")?;
+    }
+
+    Ok(())
+}
+
+fn write_optim_rhai_script<P: AsRef<Path>>(root_dir: P, cfg: &Cfg) -> Result<()> {
+    let root_dir = root_dir.as_ref();
+    let script_name = "optim.rhai";
+    let script_path = root_dir.join(script_name);
+
+    // we write the optim rhai script to the root directory
+    files::write_optim_rhai_script(&script_path)?;
+
+    // hard-link to half-life directories
+    fs::hard_link(&script_path, root_dir.join(&cfg.half_life_dir))
+        .context("Failed to hard-link optim.rhai to Half-Life directory")?;
+
+    if let Some(no_client_dll_dir) = &cfg.no_client_dll_dir {
+        let no_client_dll_dir = root_dir.join(no_client_dll_dir);
+
+        fs::hard_link(&script_path, no_client_dll_dir.join(&cfg.half_life_dir))
+            .context("Failed to hard-link optim.rhai to second Half-Life directory")?;
+    }
+
     Ok(())
 }
 

@@ -339,3 +339,15 @@ where
 {
     compile_error!("write_run_manager_sub_command_script is not implemented for this platform");
 }
+
+pub fn write_stop_tas_script<P: AsRef<Path>>(path: P) -> Result<()> {
+    let script = include_str!("../resource/hltas/stop.hltas");
+
+    fs::write(path, script).context("Failed to write stop.hltas")
+}
+
+pub fn write_optim_rhai_script<P: AsRef<Path>>(path: P) -> Result<()> {
+    let script = include_str!("../resource/rhai/optim.rhai");
+
+    fs::write(path, script).context("Failed to write optim.rhai")
+}

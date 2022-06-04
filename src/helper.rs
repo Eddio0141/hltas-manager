@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    fs, io,
     path::{Path, PathBuf},
     thread,
     time::{Duration, SystemTime},
@@ -182,4 +182,11 @@ pub fn wait_for_process_start(name: &str, timeout: Duration) -> Result<()> {
 
         sys.refresh_processes();
     }
+}
+
+pub fn force_link<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> io::Result<()> {
+    if link.as_ref().is_file() {
+        fs::remove_file(&link)?;
+    }
+    fs::hard_link(original, link)
 }

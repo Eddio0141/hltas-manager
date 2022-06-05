@@ -1,21 +1,53 @@
 use std::{
     env::current_dir,
-    fs,
     path::{Path, PathBuf},
+    time::Duration,
 };
 
 use anyhow::{Context, Result};
-use log::info;
+use log::{debug, info};
 
 use crate::{
     cfg::{self, Cfg},
-    project_toml,
+    helper, project_toml,
 };
 
-pub fn link_hltas() -> Result<()> {
+pub fn link_hltas(keep_alive: bool) -> Result<()> {
     let current_dir = current_dir().context("Failed to get current directory")?;
     let project_toml_path = current_dir.join(project_toml::FILE_NAME);
 
+    let root_dir = if project_toml_path.is_file() {
+        let project_dir = project_toml_path
+            .parent()
+            .context("Failed to get project toml parent")?;
+        let tas_dir = project_dir.parent().context("Failed to get root dir")?;
+        tas_dir.parent().context("Failed to get root dir parent")?
+    } else {
+        &current_dir
+    };
+
+    info!("Loading config...");
+    let cfg_path = root_dir.join(cfg::cfg_file_name());
+    let cfg = Cfg::load(cfg_path).context("Failed to load cfg")?;
+
+    if keep_alive {
+        loop {
+            link_hltas_once(project_toml_path.is_file(), &current_dir, &cfg, true)?;
+            std::thread::sleep(Duration::from_secs(1));
+        }
+    } else {
+        link_hltas_once(project_toml_path.is_file(), current_dir, &cfg, false)?;
+    }
+
+    Ok(())
+}
+
+pub fn link_hltas_once<P: AsRef<Path>>(
+    is_in_project_dir: bool,
+    current_dir: P,
+    cfg: &Cfg,
+    silent: bool,
+) -> Result<()> {
     let hltases_from_dir = |dir: &Path| -> Result<Vec<PathBuf>> {
         let mut hltases = Vec::new();
 
@@ -33,21 +65,16 @@ pub fn link_hltas() -> Result<()> {
         Ok(hltases)
     };
 
-    let root_dir = if project_toml_path.is_file() {
-        let project_dir = project_toml_path
-            .parent()
-            .context("Failed to get project toml parent")?;
-        let tas_dir = project_dir.parent().context("Failed to get root dir")?;
+    let current_dir = current_dir.as_ref();
+    let root_dir = if is_in_project_dir {
+        let tas_dir = current_dir.parent().context("Failed to get root dir")?;
         tas_dir.parent().context("Failed to get root dir parent")?
     } else {
         &current_dir
     };
+    let half_life_dir = root_dir.join(&cfg.half_life_dir);
 
-    info!("Loading config...");
-    let cfg_path = root_dir.join(cfg::cfg_file_name());
-    let cfg = Cfg::load(cfg_path).context("Failed to load cfg")?;
-
-    let hltases = if project_toml_path.is_file() {
+    let hltases = if is_in_project_dir {
         hltases_from_dir(&current_dir)?
     } else {
         let projects = current_dir.join(&cfg.project_dir);
@@ -64,33 +91,31 @@ pub fn link_hltas() -> Result<()> {
         hltases
     };
 
-    let half_life_dir = root_dir.join(&cfg.half_life_dir);
+    debug!("HLTASes: {:?}", hltases);
 
     for hltas in hltases {
         // hard-link to main game
-        info!("Linking {}", hltas.display());
-        let game_dir_hltas = half_life_dir.join(hltas.file_name().unwrap());
-        if game_dir_hltas.is_file() {
-            info!(
-                "File already exists in {}, removing",
-                game_dir_hltas.display()
-            );
-            fs::remove_file(&game_dir_hltas).context("Failed to remove hltas")?;
+        if !silent {
+            info!("Linking {}", hltas.display());
         }
-        fs::hard_link(&hltas, &game_dir_hltas).context("Failed to hard link hltas")?;
+        let game_dir_hltas = half_life_dir.join(hltas.file_name().unwrap());
+        debug!(
+            "Linking {} to {}",
+            hltas.display(),
+            game_dir_hltas.display()
+        );
+        helper::force_link(&hltas, &game_dir_hltas).context("Failed to hard link hltas")?;
 
         if let Some(second_game_dir) = &cfg.no_client_dll_dir {
             // hard-link to second game
             let game_dir_hltas = root_dir.join(second_game_dir.join(hltas.file_name().unwrap()));
 
-            if game_dir_hltas.is_file() {
-                info!(
-                    "File already exists in {}, removing",
-                    game_dir_hltas.display()
-                );
-                fs::remove_file(&game_dir_hltas).context("Failed to remove hltas")?;
-            }
-            fs::hard_link(&hltas, &game_dir_hltas).context("Failed to hard link hltas")?;
+            debug!(
+                "Linking {} to {}",
+                hltas.display(),
+                game_dir_hltas.display()
+            );
+            helper::force_link(&hltas, &game_dir_hltas).context("Failed to hard link hltas")?;
         }
     }
 

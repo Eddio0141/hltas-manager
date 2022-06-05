@@ -160,13 +160,7 @@ where
             bail!("cfg in {} does not exist", &src_path.display());
         }
 
-        // delete it if the file already exists
-        if dest_path.exists() {
-            info!("Config {file_name} is already hard-linked, deleting");
-            fs::remove_file(&dest_path).context("Failed to delete hard-linked cfg")?;
-        }
-
-        fs::hard_link(&src_path, &dest_path).with_context(|| {
+        helper::force_link(&src_path, &dest_path).with_context(|| {
             format!(
                 "Failed to hard-link {} to {}",
                 &src_path.display(),

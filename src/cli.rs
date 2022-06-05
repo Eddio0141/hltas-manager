@@ -136,5 +136,9 @@ pub enum Commands {
     /// - This command will fail if you don't have no-client-dll-dir set in the config file.
     /// - It will copy the missing save files from each other.
     /// - If the save files are both present, it will copy the latest created one to the other.
-    SyncSaves,
+    SyncSaves {
+        /// Will keep running the command to keep the save files "same" in the 2 half-life directories.
+        #[clap(long)]
+        keep_alive: bool,
+    },
 }

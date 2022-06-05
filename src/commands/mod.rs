@@ -115,9 +115,8 @@ pub fn run(cli: Cli) -> Result<()> {
             link()?;
             info!("Linked hltases!");
         }
-        Commands::SyncSaves => {
-            sync_saves()?;
-            info!("Synced saves!");
+        Commands::SyncSaves { keep_alive } => {
+            sync_saves(*keep_alive)?;
         }
     }
 

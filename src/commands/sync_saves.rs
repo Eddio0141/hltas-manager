@@ -1,18 +1,17 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
-
-use anyhow::{bail, Context, Result};
-
+use super::games::game_dir_types;
 use crate::{
     cfg::{self, Cfg},
     helper,
 };
+use anyhow::{bail, Context, Result};
+use log::{debug, info};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
-use super::games::game_dir_types;
-
-pub fn sync_saves() -> Result<()> {
+pub fn sync_saves(keep_alive: bool) -> Result<()> {
     let root_dir = helper::try_root_dir()
         .context("Failed to get root dir")?
         .path;
@@ -24,25 +23,56 @@ pub fn sync_saves() -> Result<()> {
     let save = Path::new("SAVE");
     let half_life_dir = root_dir.join(&config.half_life_dir);
     let half_life_second_dir = match &config.no_client_dll_dir {
-        Some(dir) => dir,
+        Some(dir) => root_dir.join(dir),
         None => bail!(
             "No no-client-dll dir set, can't sync saves\nHelp: Install using the command 'install'"
         ),
     };
+
+    let keep_alive_interval = Duration::from_secs(1);
+
+    if keep_alive {
+        loop {
+            sync_saves_once(&save, &half_life_dir, &half_life_second_dir)?;
+            std::thread::sleep(keep_alive_interval);
+        }
+    } else {
+        sync_saves_once(save, half_life_dir, half_life_second_dir)?;
+        info!("Synced saves!");
+    }
+
+    Ok(())
+}
+
+fn sync_saves_once<S: AsRef<Path>, P: AsRef<Path>, P2: AsRef<Path>>(
+    saves_dir: S,
+    half_life_dir: P,
+    half_life_second_dir: P2,
+) -> Result<()> {
+    let half_life_dir = half_life_dir.as_ref();
+    let half_life_second_dir = half_life_second_dir.as_ref();
 
     // we only do the copies for the games in second game dir
     let games =
         game_dir_types(&half_life_second_dir).context("Failed to get games from second dir")?;
 
     for game in games {
-        let first_dir_saves_dir = half_life_dir.join(&game.name).join(save);
-        let second_dir_saves_dir = half_life_second_dir.join(&game.name).join(save);
+        let first_dir_saves_dir = half_life_dir.join(&game.name).join(&saves_dir);
+        let second_dir_saves_dir = half_life_second_dir.join(&game.name).join(&saves_dir);
 
         // create all dir for missing saves folder
         if !first_dir_saves_dir.is_dir() {
+            info!(
+                "Creating saves dir for {} in first half-life dir",
+                game.name
+            );
             fs::create_dir_all(&first_dir_saves_dir).context("Failed to create saves dir")?;
         }
         if !second_dir_saves_dir.is_dir() {
+            info!(
+                "Creating saves dir for {} in second half-life dir",
+                game.name
+            );
             fs::create_dir_all(&second_dir_saves_dir).context("Failed to create saves dir")?;
         }
 
@@ -69,55 +99,68 @@ pub fn sync_saves() -> Result<()> {
 
         for path in first_dir_saves {
             // check if file exists in second dir
-            let (src, dest) = match second_dir_saves
+            let src_dest = match second_dir_saves
                 .iter()
                 .enumerate()
                 .find(|(_, p)| p.file_name() == path.file_name())
             {
                 Some((dupe_i, dupe)) => {
-                    // if it does, check which is the newest
-                    let src_dest = if path
+                    // if it does, check which is modified or not
+                    let first_save_modified = path
                         .metadata()
                         .context("Failed to get metadata")?
                         .modified()
-                        .context("Failed to get modified time")?
-                        > dupe
-                            .metadata()
-                            .context("Failed to get metadata")?
-                            .modified()
-                            .context("Failed to get modified time")?
-                    {
-                        (path, dupe.clone())
-                    } else {
-                        (dupe.clone(), path)
+                        .context("Failed to get modified time")?;
+
+                    let dupe_modified = dupe
+                        .metadata()
+                        .context("Failed to get metadata")?
+                        .modified()
+                        .context("Failed to get modified time")?;
+
+                    debug!(
+                        "first save ({}) modified date: {:?}, dupe ({}) modified date: {:?}",
+                        path.display(),
+                        first_save_modified,
+                        dupe.display(),
+                        dupe_modified
+                    );
+
+                    let src_dest = match first_save_modified.cmp(&dupe_modified) {
+                        std::cmp::Ordering::Less => Some((dupe.clone(), path)),
+                        std::cmp::Ordering::Equal => None,
+                        std::cmp::Ordering::Greater => Some((path, dupe.clone())),
                     };
 
-                    // remove dupe from list
+                    // we don't want to copy the same file twice
                     second_dir_saves.remove(dupe_i);
 
                     src_dest
                 }
                 None => {
                     // if it doesn't, copy it
-                    (
+                    Some((
                         path.clone(),
                         second_dir_saves_dir
                             .join(path.file_name().context("Failed to get file name")?),
-                    )
+                    ))
                 }
             };
 
             // overwrite copy in second dir
-            fs::copy(src, dest).context("Failed to copy save file")?;
+            if let Some((src, dest)) = src_dest {
+                info!("Copying from {} to {}", src.display(), dest.display());
+                fs::copy(src, dest).context("Failed to copy save file")?;
+            }
         }
 
         // copy remaining files from second dir to first dir
         for path in second_dir_saves {
-            fs::copy(
-                &path,
-                first_dir_saves_dir.join(path.file_name().context("Failed to get file name")?),
-            )
-            .context("Failed to copy save file")?;
+            let dest =
+                first_dir_saves_dir.join(path.file_name().context("Failed to get file name")?);
+
+            info!("Copying from {} to {}", path.display(), dest.display());
+            fs::copy(&path, dest).context("Failed to copy save file")?;
         }
     }
 

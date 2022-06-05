@@ -29,12 +29,10 @@ pub fn sync_saves(keep_alive: bool) -> Result<()> {
         ),
     };
 
-    let keep_alive_interval = Duration::from_secs(1);
-
     if keep_alive {
         loop {
             sync_saves_once(&save, &half_life_dir, &half_life_second_dir)?;
-            std::thread::sleep(keep_alive_interval);
+            std::thread::sleep(Duration::from_secs(1));
         }
     } else {
         sync_saves_once(save, half_life_dir, half_life_second_dir)?;
@@ -44,7 +42,7 @@ pub fn sync_saves(keep_alive: bool) -> Result<()> {
     Ok(())
 }
 
-fn sync_saves_once<S: AsRef<Path>, P: AsRef<Path>, P2: AsRef<Path>>(
+pub fn sync_saves_once<S: AsRef<Path>, P: AsRef<Path>, P2: AsRef<Path>>(
     saves_dir: S,
     half_life_dir: P,
     half_life_second_dir: P2,

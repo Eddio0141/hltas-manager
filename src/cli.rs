@@ -26,6 +26,7 @@ pub enum Commands {
     /// - These files will create keybinds for you to use while TASing, unless the 'minimum_cfgs' flag is set.
     /// - Read the comment in the config file for more information on what each one does.
     /// - If the files are already present in 'cfgs/' they will be used instead of creating new ones.
+    /// - Creates optim.rhai in root directory which you can use for the optimizer.
     Install {
         #[clap(long)]
         projects_dir: Option<PathBuf>,

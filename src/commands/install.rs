@@ -306,6 +306,14 @@ where
 
         info!("Hard-linking tas cfg files");
         files::hard_link_cfgs(&cfgs_dir, default_game_dir)?;
+
+        // we copy to second client too
+        if let Some(no_client_dll_dir) = &cfg.no_client_dll_dir {
+            let no_client_dll_dir = root_dir.join(no_client_dll_dir);
+
+            info!("Hard-linking tas cfg files to second game directory");
+            files::hard_link_cfgs(&cfgs_dir, no_client_dll_dir)?;
+        }
     }
 
     Ok(())

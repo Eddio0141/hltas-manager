@@ -301,18 +301,31 @@ where
         info!("Writing tas cfgs in root directory");
         files::write_cfgs(&cfgs_dir, minimum_cfgs)?;
 
-        // link to default game
-        let default_game_dir = half_life_dir.join(DEFAULT_GAME);
+        // link to all half-life game directories
+        for game_dir in game_dir_types(&half_life_dir)? {
+            if !cfg.ignore_games.contains(&game_dir.name) {
+                info!(
+                    "Linking tas cfgs in first half-life dir game {}",
+                    game_dir.name
+                );
+                files::hard_link_cfgs(&cfgs_dir, half_life_dir.join(game_dir.name))?;
+            }
+        }
 
-        info!("Hard-linking tas cfg files");
-        files::hard_link_cfgs(&cfgs_dir, default_game_dir)?;
-
-        // we copy to second client too
+        // we link to second client too
         if let Some(no_client_dll_dir) = &cfg.no_client_dll_dir {
             let no_client_dll_dir = root_dir.join(no_client_dll_dir);
 
-            info!("Hard-linking tas cfg files to second game directory");
-            files::hard_link_cfgs(&cfgs_dir, no_client_dll_dir)?;
+            // link to all second half-life game directories
+            for game_dir in game_dir_types(&no_client_dll_dir)? {
+                if !cfg.ignore_games.contains(&game_dir.name) {
+                    info!(
+                        "Linking tas cfgs in second half-life dir game {}",
+                        game_dir.name
+                    );
+                    files::hard_link_cfgs(&cfgs_dir, no_client_dll_dir.join(game_dir.name))?;
+                }
+            }
         }
     }
 

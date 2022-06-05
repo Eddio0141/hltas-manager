@@ -111,7 +111,7 @@ pub fn run(cli: Cli) -> Result<()> {
                 },
             )?;
         }
-        Commands::Link => {
+        Commands::LinkHLTAS => {
             link()?;
             info!("Linked hltases!");
         }

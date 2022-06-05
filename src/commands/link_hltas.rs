@@ -12,7 +12,7 @@ use crate::{
     project_toml,
 };
 
-pub fn link() -> Result<()> {
+pub fn link_hltas() -> Result<()> {
     let current_dir = current_dir().context("Failed to get current directory")?;
     let project_toml_path = current_dir.join(project_toml::FILE_NAME);
 

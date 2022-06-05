@@ -1,8 +1,9 @@
 pub mod games;
 pub mod install;
-pub mod link;
+pub mod link_hltas;
 pub mod project;
 pub mod run_game;
+pub mod sync;
 pub mod sync_saves;
 
 use anyhow::Result;
@@ -11,11 +12,14 @@ use log::info;
 use crate::{
     cfg::Cfg,
     cli::{Cli, Commands},
-    commands::{run_game::RunGameFlags, sync_saves::sync_saves},
+    commands::run_game::RunGameFlags,
     helper::{self},
 };
 
-use self::{games::games, install::install, link::link, project::init, project::new, run_game::*};
+use self::{
+    games::games, install::install, link_hltas::link_hltas, project::init, project::new,
+    run_game::*, sync::sync, sync_saves::sync_saves,
+};
 #[cfg(debug_assertions)]
 use log::debug;
 
@@ -111,12 +115,15 @@ pub fn run(cli: Cli) -> Result<()> {
                 },
             )?;
         }
-        Commands::LinkHLTAS => {
-            link()?;
+        Commands::LinkHLTAS { keep_alive } => {
+            link_hltas(*keep_alive)?;
             info!("Linked hltases!");
         }
         Commands::SyncSaves { keep_alive } => {
             sync_saves(*keep_alive)?;
+        }
+        Commands::Sync => {
+            sync()?;
         }
     }
 

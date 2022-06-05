@@ -130,7 +130,11 @@ pub enum Commands {
     /// Links all .hltas files to the game directory.
     ///
     /// - This command works on running from the project dir or the root dir.
-    LinkHLTAS,
+    LinkHLTAS {
+        /// Will keep running the command to keep hard linking the hltas files.
+        #[clap(long)]
+        keep_alive: bool,
+    },
     /// Syncs the SAVE directory with the primary and secondary game directories.
     ///
     /// - This command will fail if you don't have no-client-dll-dir set in the config file.
@@ -141,4 +145,6 @@ pub enum Commands {
         #[clap(long)]
         keep_alive: bool,
     },
+    /// Keeps running `LinkHLTAS` and `SyncSaves` commands.
+    Sync,
 }

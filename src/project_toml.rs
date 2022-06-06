@@ -1,8 +1,4 @@
-use std::{
-    fs::File,
-    io::{Read, Write},
-    path::Path,
-};
+use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -29,13 +25,9 @@ impl ProjectToml {
     where
         P: AsRef<Path>,
     {
-        let mut file = File::open(path).context("Failed to open project config file")?;
-        let mut contents = String::new();
-
-        file.read_to_string(&mut contents)
-            .context("Failed to read project config file")?;
+        let project = fs::read_to_string(path).context("Failed to read project config file")?;
         let project: ProjectToml =
-            toml::from_str(&contents).context("Failed to parse project config file")?;
+            toml::from_str(&project).context("Failed to parse project config file")?;
 
         Ok(project)
     }
@@ -45,10 +37,7 @@ impl ProjectToml {
         P: AsRef<Path>,
     {
         let contents = toml::to_string(self)?;
-
-        let mut file = File::create(path).context("Could not create config file")?;
-        file.write_all(contents.as_bytes())
-            .context("Could not write to config file")?;
+        fs::write(path, contents).context("Could not write to config file")?;
 
         Ok(())
     }

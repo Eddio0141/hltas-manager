@@ -303,6 +303,14 @@ where
                         ),
                     }
                 };
+                let hl_exe_count = |system: &mut System| {
+                    system.refresh_processes_specifics(ProcessRefreshKind::new().with_cpu());
+                    system.processes_by_exact_name("hl.exe").count()
+                };
+
+                let mut system = System::new();
+                // we get initial half life count
+                let initial_hl_count = hl_exe_count(&mut system);
 
                 for i in 0..*optim_games {
                     run_game(i + 1, *optim_games);
@@ -312,16 +320,15 @@ where
                 }
 
                 if *keep_alive {
-                    let mut system = System::new();
-
                     loop {
                         system.refresh_processes_specifics(ProcessRefreshKind::new().with_cpu());
 
                         // scan for hl.exe processes
-                        let half_lives = system.processes_by_exact_name("hl.exe").count();
+                        let current_lives = hl_exe_count(&mut system);
+                        let expected_lives_count = initial_hl_count + *optim_games;
 
-                        if half_lives < *optim_games {
-                            let missing_half_lives = *optim_games - half_lives;
+                        if current_lives < expected_lives_count {
+                            let missing_half_lives = expected_lives_count - current_lives;
                             warn!(
                                 "Missing {} games, starting up new half-lives",
                                 missing_half_lives

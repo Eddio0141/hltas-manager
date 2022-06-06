@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{bail, Context, Result};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use sysinfo::{ProcessRefreshKind, RefreshKind, System, SystemExt};
 
 use crate::{
@@ -28,11 +28,12 @@ pub struct RunGameFlags<'a> {
     pub height: u32,
     pub params: &'a Option<Vec<String>>,
     pub game_override: &'a Option<String>,
+    pub keep_alive: bool,
 }
 
 pub struct RunGameBxtFlags<'a> {
     pub run_script: &'a Option<String>,
-    pub optim_games: &'a Option<u8>,
+    pub optim_games: &'a Option<usize>,
     pub sim: bool,
     pub record: bool,
     pub no_bxt: bool,
@@ -192,6 +193,7 @@ where
         height,
         params,
         game_override,
+        keep_alive,
     } = run_game_flags;
     let RunGameBxtFlags {
         run_script,
@@ -282,7 +284,7 @@ where
     } else {
         match optim_games {
             Some(optim_games) => {
-                for i in 0..*optim_games {
+                let run_game = |out_of, total_games| {
                     let bxt_result = process::Command::new(&injector_exe)
                         .arg(&hl_exe)
                         .args(&params)
@@ -292,19 +294,49 @@ where
                     match bxt_result {
                         Ok(_) => info!(
                             "Successfully launched {} out of {} games",
-                            i + 1,
-                            optim_games
+                            out_of, total_games
                         ),
+                        // TODO attempt to start the game again if it fails
                         Err(err) => error!(
                             "Failed to launch {} out of {} games: {}",
-                            i + 1,
-                            optim_games,
-                            err
+                            out_of, total_games, err
                         ),
                     }
+                };
+
+                for i in 0..*optim_games {
+                    run_game(i + 1, *optim_games);
 
                     // TODO wait for the game to start in a better way
                     thread::sleep(Duration::from_secs(6));
+                }
+
+                if *keep_alive {
+                    let mut system = System::new();
+
+                    loop {
+                        system.refresh_processes_specifics(ProcessRefreshKind::new().with_cpu());
+
+                        // scan for hl.exe processes
+                        let half_lives = system.processes_by_exact_name("hl.exe").count();
+
+                        if half_lives < *optim_games {
+                            let missing_half_lives = *optim_games - half_lives;
+                            warn!(
+                                "Missing {} games, starting up new half-lives",
+                                missing_half_lives
+                            );
+
+                            for i in 0..missing_half_lives {
+                                run_game(i + 1, missing_half_lives);
+
+                                // TODO wait for the game to start in a better way
+                                thread::sleep(Duration::from_secs(6));
+                            }
+                        }
+
+                        thread::sleep(Duration::from_secs(5));
+                    }
                 }
 
                 None

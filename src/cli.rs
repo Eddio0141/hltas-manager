@@ -76,6 +76,8 @@ pub enum Commands {
         /// Runs multiple vanilla games.
         #[clap(long, conflicts_with_all = &["sim", "vanilla-game", "record", "no-bxt", "run-script", "r-input", "no-tas-view"])]
         optim_games: Option<u8>,
+        #[clap(long, requires = "optim_games")]
+        keep_alive: bool,
         /// Runs the simulator client.
         #[clap(long, conflicts_with_all = &["low", "vanilla-game", "record", "width", "height", "no-bxt", "run-script"])]
         sim: bool,

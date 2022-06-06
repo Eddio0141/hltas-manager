@@ -75,7 +75,10 @@ pub enum Commands {
     RunGame {
         /// Runs multiple vanilla games.
         #[clap(long, conflicts_with_all = &["sim", "vanilla-game", "record", "no-bxt", "run-script", "r-input", "no-tas-view"])]
-        optim_games: Option<u8>,
+        optim_games: Option<usize>,
+        /// Detects if the game closed and restarts it.
+        ///
+        /// - If you use `optim-games`, it will maintain the amount of games specified.
         #[clap(long, requires = "optim_games")]
         keep_alive: bool,
         /// Runs the simulator client.

@@ -92,6 +92,7 @@ pub fn run(cli: Cli) -> Result<()> {
             no_tas_view,
             game_override,
             optim_games,
+            keep_alive,
         } => {
             run_game(
                 RunGameMiscFlags {
@@ -105,6 +106,7 @@ pub fn run(cli: Cli) -> Result<()> {
                     height: *height,
                     params,
                     game_override,
+                    keep_alive: *keep_alive,
                 },
                 RunGameBxtFlags {
                     run_script,

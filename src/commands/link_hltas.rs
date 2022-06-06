@@ -70,12 +70,12 @@ pub fn link_hltas_once<P: AsRef<Path>>(
         let tas_dir = current_dir.parent().context("Failed to get root dir")?;
         tas_dir.parent().context("Failed to get root dir parent")?
     } else {
-        &current_dir
+        current_dir
     };
     let half_life_dir = root_dir.join(&cfg.half_life_dir);
 
     let hltases = if is_in_project_dir {
-        hltases_from_dir(&current_dir)?
+        hltases_from_dir(current_dir)?
     } else {
         let projects = current_dir.join(&cfg.project_dir);
 

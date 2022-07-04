@@ -229,7 +229,7 @@ where
         args.push("-noforcemparms".to_string());
         args.push("-gl".to_string());
         args.push("+gl_vsync 0".to_string());
-        args.push("windowed".to_string());
+        args.push("-windowed".to_string());
         args.push(format!("-w {}", width));
         args.push(format!("-h {}", height));
 

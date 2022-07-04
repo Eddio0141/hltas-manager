@@ -10,6 +10,7 @@ pub const FILE_NAME: &str = "project.toml";
 #[derive(Serialize, Deserialize)]
 pub struct ProjectToml {
     pub game: String,
+    // TODO command line options for project
 }
 
 impl Default for ProjectToml {

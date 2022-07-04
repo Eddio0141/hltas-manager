@@ -72,23 +72,6 @@ pub fn install(
         }
     }
 
-    // check if second client exists and create folder if not
-    if let Some(no_client_dll) = &cfg.no_client_dll_dir {
-        let no_client_dll_dir = root_dir.join(no_client_dll);
-
-        if !no_client_dll_dir.is_dir() {
-            fs::create_dir(&no_client_dll_dir).with_context(|| {
-                format!(
-                    "Failed to create directory for no client dll: {}",
-                    no_client_dll_dir.display()
-                )
-            })?;
-        }
-    }
-
-    // hard link cfgs
-    cfgs_link(&root_dir, &cfg, minimum_cfgs)?;
-
     // create projects dir if it doesn't exist
     if !projects_dir.is_dir() {
         if let Some(parent) = cfg.project_dir.parent() {
@@ -105,61 +88,62 @@ pub fn install(
     if let Some(no_client_dll_dir) = &cfg.no_client_dll_dir {
         let no_client_dll_dir = root_dir.join(no_client_dll_dir);
 
-        if !no_client_dll_dir.is_dir() {
-            let mut copy_paths = Vec::new();
+        let mut copy_paths = Vec::new();
 
-            let game_dirs = game_dir_types(&hl_dir)?;
+        let game_dirs = game_dir_types(&hl_dir)?;
 
-            let dirs = hl_dir
-                .read_dir()
-                .context("Failed to read Half-Life directory")?;
-            for entry in dirs {
-                // check if path is a game directory
-                let entry = entry.context("Failed to read Half-Life directory")?;
-                let path = entry.path();
+        let dirs = hl_dir
+            .read_dir()
+            .context("Failed to read Half-Life directory")?;
+        for entry in dirs {
+            // check if path is a game directory
+            let entry = entry.context("Failed to read Half-Life directory")?;
+            let path = entry.path();
 
-                // we exclude game dir from being copied unless its the default game
-                if let Some(path_name) = path.file_name() {
-                    let path_name = path_name.to_string_lossy().to_string();
+            // we exclude game dir from being copied unless its the default game
+            if let Some(path_name) = path.file_name() {
+                let path_name = path_name.to_string_lossy().to_string();
 
-                    if path_name == DEFAULT_GAME
-                        || !game_dirs
-                            .iter()
-                            .any(|game_dir| game_dir.dir_names().contains(&path_name))
-                    {
-                        copy_paths.push(path);
-                    }
+                if path_name == DEFAULT_GAME
+                    || !game_dirs
+                        .iter()
+                        .any(|game_dir| game_dir.dir_names().contains(&path_name))
+                {
+                    copy_paths.push(path);
                 }
             }
-
-            info!("Copying half-life directory to a second game folder");
-
-            fs::create_dir(&no_client_dll_dir).context("Failed to create second game folder")?;
-            fs_extra::copy_items(
-                copy_paths.as_slice(),
-                &no_client_dll_dir,
-                &CopyOptions {
-                    overwrite: true,
-                    ..Default::default()
-                },
-            )
-            .with_context(|| {
-                format!(
-                    "Failed to copy half-life directory from {} to {}",
-                    hl_dir.display(),
-                    no_client_dll_dir.display()
-                )
-            })?;
-
-            // copy the simulator dll to the second half-life directory's steam_api.dll
-            info!("Copying simulator client dll to the second half-life directory");
-            fs::copy(
-                &base_sim_client_dll_path,
-                &no_client_dll_dir.join(steam_api_dll),
-            )
-            .context("Failed to copy simulator dll to the second half-life directory")?;
         }
+
+        info!("Copying half-life directory to a second game folder");
+
+        fs::create_dir(&no_client_dll_dir).context("Failed to create second game folder")?;
+        fs_extra::copy_items(
+            copy_paths.as_slice(),
+            &no_client_dll_dir,
+            &CopyOptions {
+                overwrite: true,
+                ..Default::default()
+            },
+        )
+        .with_context(|| {
+            format!(
+                "Failed to copy half-life directory from {} to {}",
+                hl_dir.display(),
+                no_client_dll_dir.display()
+            )
+        })?;
+
+        // copy the simulator dll to the second half-life directory's steam_api.dll
+        info!("Copying simulator client dll to the second half-life directory");
+        fs::copy(
+            &base_sim_client_dll_path,
+            &no_client_dll_dir.join(steam_api_dll),
+        )
+        .context("Failed to copy simulator dll to the second half-life directory")?;
     }
+
+    // hard link cfgs
+    cfgs_link(&root_dir, &cfg, minimum_cfgs)?;
 
     // copy default steam_api.dll as reset.dll
     // only on main half life directory

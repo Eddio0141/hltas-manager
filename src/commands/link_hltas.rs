@@ -51,7 +51,10 @@ pub fn link_hltas_once<P: AsRef<Path>>(
     let hltases_from_dir = |dir: &Path| -> Result<Vec<PathBuf>> {
         let mut hltases = Vec::new();
 
-        for dir in dir.read_dir().context("Failed to read directory")? {
+        for dir in dir
+            .read_dir()
+            .with_context(|| format!("Failed to read directory {}", dir.display()))?
+        {
             let dir = dir.context("Failed to read dir")?;
             let path = dir.path();
 

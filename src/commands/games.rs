@@ -53,8 +53,10 @@ where
 
     let mut types = Vec::new();
 
-    for entry in fs::read_dir(dir).context("Failed to read directory")? {
-        let entry = entry.context("Failed to read directory")?;
+    for entry in
+        fs::read_dir(dir).with_context(|| format!("Failed to read directory {}", dir.display()))?
+    {
+        let entry = entry.with_context(|| format!("Failed to read directory {}", dir.display()))?;
         let path = entry.path();
 
         if path.is_dir() {

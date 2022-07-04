@@ -363,6 +363,10 @@ where
         }
     };
 
+    // TODO INFO: HL output: Some(Ok(Output { status: ExitStatus(ExitStatus(1)), stdout: "", stderr: "E\0r\0r\0o\0r\0...
+    // this error can't be picked up, sort it out
+    //info!("HL output: {:?}", output);
+
     match output {
         Some(output) => Ok(Some(output.context("Failed to run Half-Life")?)),
         None => Ok(None),

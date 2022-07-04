@@ -72,6 +72,20 @@ pub fn install(
         }
     }
 
+    // check if second client exists and create folder if not
+    if let Some(no_client_dll) = &cfg.no_client_dll_dir {
+        let no_client_dll_dir = root_dir.join(no_client_dll);
+
+        if !no_client_dll_dir.is_dir() {
+            fs::create_dir(&no_client_dll_dir).with_context(|| {
+                format!(
+                    "Failed to create directory for no client dll: {}",
+                    no_client_dll_dir.display()
+                )
+            })?;
+        }
+    }
+
     // hard link cfgs
     cfgs_link(&root_dir, &cfg, minimum_cfgs)?;
 

@@ -242,15 +242,9 @@ where
             info!("Copying game directory to second client...");
             let copy_options = CopyOptions {
                 skip_exist: true,
+                copy_inside: true,
                 ..Default::default()
             };
-
-            fs::create_dir(second_game_dir).with_context(|| {
-                format!(
-                    "Failed to create game directory at {}",
-                    second_game_dir.display()
-                )
-            })?;
 
             fs_extra::dir::copy(&game_dir, &second_game_dir, &copy_options).with_context(|| {
                 format!(

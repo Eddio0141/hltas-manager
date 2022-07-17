@@ -95,7 +95,7 @@ where
     let default_game = DEFAULT_GAME.to_string();
     let game_name_full = game_name.as_ref().unwrap_or(&default_game);
     let half_life_dir = &cfg.half_life_dir;
-    let game_dir = half_life_dir.join(game_name_full);
+    let game_dir = root_dir.join(half_life_dir.join(game_name_full));
 
     // validate if second client exists
     let second_game_dir = validate_second_client(&cfg, &root_dir, game_name_full)?;
@@ -245,8 +245,20 @@ where
                 ..Default::default()
             };
 
-            fs_extra::dir::copy(&game_dir, &second_game_dir, &copy_options)
-                .context("Failed to copy game dir")?;
+            fs::create_dir(second_game_dir).with_context(|| {
+                format!(
+                    "Failed to create game directory at {}",
+                    second_game_dir.display()
+                )
+            })?;
+
+            fs_extra::dir::copy(&game_dir, &second_game_dir, &copy_options).with_context(|| {
+                format!(
+                    "Failed to copy game dir from {} to {}",
+                    game_dir.as_ref().display(),
+                    second_game_dir.display()
+                )
+            })?;
 
             // remove client.dll if it exists unless default game
             if let Some(game_name) = game_dir.as_ref().file_name() {

@@ -290,7 +290,13 @@ where
 #[cfg(target_os = "windows")]
 const RUN_MANAGER_EXEC_BASE_BAT: &str = include_str!("../resource/bat/run_manager_base.bat");
 #[cfg(target_os = "windows")]
+const RUN_MANAGER_EXEC_BASE_ROOT_BAT: &str =
+    include_str!("../resource/bat/run_manager_base_root.bat");
+#[cfg(target_os = "windows")]
 const RUN_MANAGER_EXEC_BASE_PS1: &str = include_str!("../resource/ps1/run_manager_base.ps1");
+#[cfg(target_os = "windows")]
+const RUN_MANAGER_EXEC_BASE_ROOT_PS1: &str =
+    include_str!("../resource/ps1/run_manager_base_root.ps1");
 #[cfg(target_os = "windows")]
 const RUN_MANAGER_BAT: &str = include_str!("../resource/bat/run_manager.bat");
 #[cfg(target_os = "windows")]
@@ -299,7 +305,7 @@ const RUN_MANAGER_PS1: &str = include_str!("../resource/ps1/run_manager.ps1");
 const RUN_MANAGER_SUB_COMMAND: &str = "SUB_COMMAND";
 
 #[cfg(target_os = "windows")]
-pub fn write_manager_script_bat<P>(dest: P, sub_command: Option<&str>) -> Result<()>
+pub fn write_manager_script_bat<P>(dest: P, sub_command: Option<&str>, root_dir: bool) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -307,7 +313,11 @@ where
 
     let script = match sub_command {
         Some(sub_command) => {
-            RUN_MANAGER_EXEC_BASE_BAT.replace(RUN_MANAGER_SUB_COMMAND, sub_command)
+            if root_dir {
+                RUN_MANAGER_EXEC_BASE_ROOT_BAT.replace(RUN_MANAGER_SUB_COMMAND, sub_command)
+            } else {
+                RUN_MANAGER_EXEC_BASE_BAT.replace(RUN_MANAGER_SUB_COMMAND, sub_command)
+            }
         }
         None => RUN_MANAGER_BAT.to_string(),
     };
@@ -321,7 +331,7 @@ where
 }
 
 #[cfg(target_os = "windows")]
-pub fn write_manager_script<P>(dest: P, sub_command: Option<&str>) -> Result<()>
+pub fn write_manager_script<P>(dest: P, sub_command: Option<&str>, root_dir: bool) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -329,7 +339,11 @@ where
 
     let script = match sub_command {
         Some(sub_command) => {
-            RUN_MANAGER_EXEC_BASE_PS1.replace(RUN_MANAGER_SUB_COMMAND, sub_command)
+            if root_dir {
+                RUN_MANAGER_EXEC_BASE_ROOT_PS1.replace(RUN_MANAGER_SUB_COMMAND, sub_command)
+            } else {
+                RUN_MANAGER_EXEC_BASE_PS1.replace(RUN_MANAGER_SUB_COMMAND, sub_command)
+            }
         }
         None => RUN_MANAGER_PS1.to_string(),
     };

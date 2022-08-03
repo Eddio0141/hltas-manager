@@ -151,34 +151,47 @@ where
 
     let fail_message = |script_name: &str| format!("Failed to create {script_name} script");
 
+    // TODO probably remove batch scripts
     if use_batch_scripts {
         info!("Creating batch scripts...");
 
         // manager
-        files::write_manager_script_bat(project_dir.join(format!("{}.bat", crate::NAME)), None)
-            .context("Failed to create manager script")?;
+        files::write_manager_script_bat(
+            project_dir.join(format!("{}.bat", crate::NAME)),
+            None,
+            true,
+        )
+        .context("Failed to create manager script")?;
 
         // run-game
-        files::write_manager_script_bat(project_dir.join("run_game.bat"), Some("run-game"))
+        files::write_manager_script_bat(project_dir.join("run_game.bat"), Some("run-game"), false)
             .context(fail_message("run_game.bat"))?;
 
         // link files
-        files::write_manager_script_bat(project_dir.join("link_files.bat"), Some("link-hltas"))
-            .context(fail_message("link_files.bat"))?;
+        files::write_manager_script_bat(
+            project_dir.join("link_files.bat"),
+            Some("link-hltas"),
+            false,
+        )
+        .context(fail_message("link_files.bat"))?;
     } else {
         info!("Creating powershell scripts...");
 
         // manager
-        files::write_manager_script(project_dir.join(format!("{}.ps1", crate::NAME)), None)
+        files::write_manager_script(project_dir.join(format!("{}.ps1", crate::NAME)), None, true)
             .context("Failed to create manager script")?;
 
         // run-game
-        files::write_manager_script(project_dir.join("run_game.ps1"), Some("run-game"))
+        files::write_manager_script(project_dir.join("run_game.ps1"), Some("run-game"), false)
             .context(fail_message("run_game.ps1"))?;
 
         // link files
-        files::write_manager_script(project_dir.join("link_hltas.ps1"), Some("link-hltas"))
-            .context(fail_message("link_hltas.ps1"))?;
+        files::write_manager_script(
+            project_dir.join("link_hltas.ps1"),
+            Some("link-hltas"),
+            false,
+        )
+        .context(fail_message("link_hltas.ps1"))?;
     }
 
     Ok(())

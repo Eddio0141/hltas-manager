@@ -39,7 +39,7 @@ pub enum Commands {
         /// - If the flag is set without any values, it will reset all cfgs.
         /// - You can specify which cfgs to reset by passing a list of full cfg names.
         /// - Example: `reset_cfgs=ingame.cfg record.cfg hltas.cfg`
-        #[clap(long)]
+        #[clap(long, min_values = 0)]
         reset_cfgs: Option<Vec<String>>,
     },
     /// Create a new project.

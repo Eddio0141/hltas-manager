@@ -1,2 +1,5 @@
+Push-Location
 $sub_command = "SUB_COMMAND"
-..\..\hltas_manager.exe $sub_command $args
+Set-Location ..\..
+.\hltas_manager.exe $sub_command $args
+Pop-Location

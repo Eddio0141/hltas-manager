@@ -163,7 +163,7 @@ where
             .context(fail_message("run_game.bat"))?;
 
         // link files
-        files::write_manager_script_bat(project_dir.join("link_files.bat"), Some("link"))
+        files::write_manager_script_bat(project_dir.join("link_files.bat"), Some("link-hltas"))
             .context(fail_message("link_files.bat"))?;
     } else {
         info!("Creating powershell scripts...");
@@ -177,7 +177,7 @@ where
             .context(fail_message("run_game.ps1"))?;
 
         // link files
-        files::write_manager_script(project_dir.join("link_hltas.ps1"), Some("link"))
+        files::write_manager_script(project_dir.join("link_hltas.ps1"), Some("link-hltas"))
             .context(fail_message("link_hltas.ps1"))?;
     }
 

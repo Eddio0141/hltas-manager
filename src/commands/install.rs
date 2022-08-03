@@ -62,9 +62,9 @@ pub fn install(override_: Override) -> Result<()> {
     if !hl_dir.is_dir() {
         bail!("Half-life directory does not exist, possible that you don't have the manager in a GoldSrc Package folder");
     }
-    // verifying that sim.dll exists in root dir
+    // verifying that _sim.dll exists in root dir
     if !base_sim_client_dll_path.is_file() {
-        bail!("sim.dll does not exist in the root directory");
+        bail!("_sim.dll does not exist in the root directory");
     }
     // verifying if steam_api.dll exists
     if !steam_api_dll_path.is_file() {
@@ -74,13 +74,13 @@ pub fn install(override_: Override) -> Result<()> {
     let steam_api_dll_hash = helper::sha_256_file(&steam_api_dll_path)?;
 
     if STEAM_API_DLL_HASH != steam_api_dll_hash.as_slice() {
-        // check for reset.dll hash
+        // check for _reset.dll hash
         if reset_dll_path.is_file() {
-            // check if reset.dll exists and that hash is matching
+            // check if _reset.dll exists and that hash is matching
             let reset_dll_hash = helper::sha_256_file(&reset_dll_path)?;
 
             if STEAM_API_DLL_HASH != reset_dll_hash.as_slice() {
-                bail!("reset.dll hash is not matching default steam_api.dll hash");
+                bail!("_reset.dll hash is not matching default steam_api.dll hash");
             }
         } else {
             warn!("steam_api.dll hash is not matching default steam_api.dll hash and {reset_dll} does not exist, proceeding without simulator client dll");
@@ -156,25 +156,25 @@ pub fn install(override_: Override) -> Result<()> {
     // symbolic link cfgs
     cfgs_link(&root_dir, &cfg, minimum_cfgs, reset_cfgs)?;
 
-    // copy default steam_api.dll as reset.dll
+    // copy default steam_api.dll as _reset.dll
     // only do this on the main half life directory since the no client dll dir is used as the main client
     if reset_dll_path.is_file() {
-        info!("reset.dll already exists, skipping");
+        info!("_reset.dll already exists, skipping");
     } else {
-        info!("Copying default steam_api.dll to reset.dll");
+        info!("Copying default steam_api.dll to _reset.dll");
         fs::copy(&steam_api_dll_path, reset_dll_path)
-            .context("Failed to copy steam_api.dll to reset.dll")?;
+            .context("Failed to copy steam_api.dll to _reset.dll")?;
     }
 
-    // copy the simulator client steam_api.dll (sim.dll)
+    // copy the simulator client steam_api.dll (_sim.dll)
     let sim_client_dll_path = hl_dir.join(sim_dll);
 
     if sim_client_dll_path.exists() {
-        info!("sim.dll already exists in the Half-Life directory, proceeding copy anyway");
+        info!("_sim.dll already exists in the Half-Life directory, proceeding copy anyway");
     }
 
-    info!("Copying sim.dll to the game directory");
-    fs::copy(base_sim_client_dll_path, sim_client_dll_path).context("Failed to copy sim.dll")?;
+    info!("Copying _sim.dll to the game directory");
+    fs::copy(base_sim_client_dll_path, sim_client_dll_path).context("Failed to copy _sim.dll")?;
 
     stop_tas_script(&root_dir, &cfg)?;
 

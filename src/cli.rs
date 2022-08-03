@@ -35,7 +35,7 @@ pub enum Commands {
         #[clap(long)]
         minimum_cfgs: bool,
         /// Resets the cfgs to the manager default.
-        /// 
+        ///
         /// - If the flag is set without any values, it will reset all cfgs.
         /// - You can specify which cfgs to reset by passing a list of full cfg names.
         /// - Example: `reset_cfgs=ingame.cfg record.cfg hltas.cfg`
@@ -81,7 +81,7 @@ pub enum Commands {
     /// - Requires you to run from the project directory.
     RunGame {
         /// Runs multiple vanilla games.
-        #[clap(long, conflicts_with_all = &["sim", "vanilla-game", "record", "no-bxt", "run-script", "r-input", "no-tas-view"])]
+        #[clap(long, short, conflicts_with_all = &["sim", "vanilla-game", "record", "no-bxt", "run-script", "r-input", "no-tas-view"])]
         optim_games: Option<usize>,
         /// Detects if the game closed and restarts it.
         ///
@@ -89,13 +89,13 @@ pub enum Commands {
         #[clap(long, requires = "optim_games")]
         keep_alive: bool,
         /// Runs the simulator client.
-        #[clap(long, conflicts_with_all = &["low", "vanilla-game", "record", "width", "height", "no-bxt", "run-script"])]
+        #[clap(long, short, conflicts_with_all = &["low", "vanilla-game", "record", "width", "height", "no-bxt", "run-script"])]
         sim: bool,
         /// Runs the game with low quality settings.
-        #[clap(long, conflicts_with = "record")]
+        #[clap(long, short, conflicts_with = "record")]
         low: bool,
         /// Runs the main game with client.dll and default settings.
-        #[clap(long, conflicts_with = "record")]
+        #[clap(long, short, conflicts_with = "record")]
         vanilla_game: bool,
         /// Runs the game in high quality and 1080p resolution by default.
         #[clap(long, conflicts_with = "no-bxt")]
@@ -103,6 +103,7 @@ pub enum Commands {
         /// Sets the window width.
         #[clap(
             long,
+            short,
             default_value("1280"),
             default_value_if("sim", None, Some("100")),
             default_value_if("record", None, Some("1920")),
@@ -112,6 +113,7 @@ pub enum Commands {
         /// Sets the window height.
         #[clap(
             long,
+            short,
             default_value("800"),
             default_value_if("sim", None, Some("100")),
             default_value_if("record", None, Some("1080")),
@@ -125,7 +127,7 @@ pub enum Commands {
         ///
         /// Useful in running the script with the 'seed' property to specify rng.
         #[clap(long)]
-        run_script: Option<String>,
+        script: Option<String>,
         /// Parameters to pass to hl.exe on start.
         #[clap(long, short)]
         params: Option<Vec<String>>,

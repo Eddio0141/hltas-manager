@@ -92,7 +92,7 @@ pub fn run(cli: Cli) -> Result<()> {
             width,
             height,
             no_bxt,
-            run_script,
+            script: run_script,
             params,
             r_input,
             no_tas_view,

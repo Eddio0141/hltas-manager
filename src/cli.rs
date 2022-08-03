@@ -103,7 +103,6 @@ pub enum Commands {
         /// Sets the window width.
         #[clap(
             long,
-            short,
             default_value("1280"),
             default_value_if("sim", None, Some("100")),
             default_value_if("record", None, Some("1920")),
@@ -113,7 +112,6 @@ pub enum Commands {
         /// Sets the window height.
         #[clap(
             long,
-            short,
             default_value("800"),
             default_value_if("sim", None, Some("100")),
             default_value_if("record", None, Some("1080")),

@@ -132,7 +132,8 @@ pub fn install(override_: Override) -> Result<()> {
             copy_paths.as_slice(),
             &no_client_dll_dir,
             &CopyOptions {
-                overwrite: true,
+                skip_exist: true,
+                copy_inside: true,
                 ..Default::default()
             },
         )

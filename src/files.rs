@@ -347,7 +347,7 @@ pub fn write_manager_script<P>(_path: P, _file_name: &str, _sub_command: &str) -
 where
     P: AsRef<Path>,
 {
-    compile_error!("write_run_manager_sub_command_script is not implemented for this platform");
+    compile_error!("write_manager_script is not implemented for this platform");
 }
 
 pub fn write_stop_tas_script<P: AsRef<Path>>(path: P) -> Result<()> {

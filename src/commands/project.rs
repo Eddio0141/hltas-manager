@@ -63,7 +63,7 @@ pub fn init(
 
     // check if project folder exists
     if !project_dir.is_dir() {
-        bail!("Project folder does not exist\nHelp: Use 'new' to create a new project.");
+        bail!("Project folder does not exist, Help: Use 'new' to create a new project.");
     }
 
     init_project(
@@ -86,7 +86,7 @@ where
     P: AsRef<Path>,
 {
     // load config
-    info!("Loading config...");
+    info!("Loading config");
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load(cfg)?;
 
@@ -107,7 +107,7 @@ where
     let project_toml = project_dir.as_ref().join(project_toml::FILE_NAME);
 
     if !project_toml.is_file() {
-        info!("Creating project.toml...");
+        info!("Creating project.toml");
 
         let project = ProjectToml {
             game: game_name_full.to_string(),

@@ -32,8 +32,14 @@ pub fn run(cli: Cli) -> Result<()> {
             projects_dir,
             half_life_dir,
             minimum_cfgs,
+            reset_cfgs,
         } => {
-            install(projects_dir, half_life_dir, *minimum_cfgs)?;
+            install(install::Override {
+                projects_dir,
+                half_life_dir,
+                minimum_cfgs: *minimum_cfgs,
+                reset_cfgs,
+            })?;
             info!("Installed!");
         }
         Commands::New {

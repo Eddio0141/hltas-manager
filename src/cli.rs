@@ -34,6 +34,13 @@ pub enum Commands {
         half_life_dir: Option<PathBuf>,
         #[clap(long)]
         minimum_cfgs: bool,
+        /// Resets the cfgs to the manager default.
+        /// 
+        /// - If the flag is set without any values, it will reset all cfgs.
+        /// - You can specify which cfgs to reset by passing a list of full cfg names.
+        /// - Example: `reset_cfgs=ingame.cfg record.cfg hltas.cfg`
+        #[clap(long)]
+        reset_cfgs: Option<Vec<String>>,
     },
     /// Create a new project.
     ///

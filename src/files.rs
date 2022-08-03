@@ -76,43 +76,47 @@ where
     Ok(())
 }
 
-const HLTAS_CFG: &[u8] = include_bytes!("../resource/cfgs/hltas.cfg");
-const INGAME_CFG: &[u8] = include_bytes!("../resource/cfgs/ingame.cfg");
-const RECORD_CFG: &[u8] = include_bytes!("../resource/cfgs/record.cfg");
-const EDITOR_CFG: &[u8] = include_bytes!("../resource/cfgs/editor.cfg");
-const CAM_CFG: &[u8] = include_bytes!("../resource/cfgs/cam.cfg");
-
-const HLTAS_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/hltas_min.cfg");
-const INGAME_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/ingame_min.cfg");
-const RECORD_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/record_min.cfg");
-const EDITOR_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/editor_min.cfg");
-const CAM_MIN_CFG: &[u8] = include_bytes!("../resource/cfgs/cam_min.cfg");
-
-pub fn write_cfgs<P>(path: P, minimum: bool) -> Result<()>
+pub fn write_cfgs<P>(path: P, minimum: bool, reset_cfgs: &Option<Vec<String>>) -> Result<()>
 where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
 
     if !path.is_dir() {
+        info!("Creating cfgs directory");
         fs::create_dir_all(path).context("Failed to create cfg dir")?;
     }
 
     let files = if minimum {
         vec![
-            ("hltas.cfg", HLTAS_MIN_CFG),
-            ("ingame.cfg", INGAME_MIN_CFG),
-            ("record.cfg", RECORD_MIN_CFG),
-            ("editor.cfg", EDITOR_MIN_CFG),
-            ("cam.cfg", CAM_MIN_CFG),
+            (
+                "hltas.cfg",
+                include_bytes!("../resource/cfgs/hltas_min.cfg").as_ref(),
+            ),
+            (
+                "ingame.cfg",
+                include_bytes!("../resource/cfgs/ingame_min.cfg"),
+            ),
+            (
+                "record.cfg",
+                include_bytes!("../resource/cfgs/record_min.cfg"),
+            ),
+            (
+                "editor.cfg",
+                include_bytes!("../resource/cfgs/editor_min.cfg"),
+            ),
+            ("cam.cfg", include_bytes!("../resource/cfgs/cam_min.cfg")),
         ]
     } else {
         vec![
-            ("hltas.cfg", HLTAS_CFG),
-            ("ingame.cfg", INGAME_CFG),
-            ("record.cfg", RECORD_CFG),
-            ("editor.cfg", EDITOR_CFG),
-            ("cam.cfg", CAM_CFG),
+            (
+                "hltas.cfg",
+                include_bytes!("../resource/cfgs/hltas.cfg").as_ref(),
+            ),
+            ("ingame.cfg", include_bytes!("../resource/cfgs/ingame.cfg")),
+            ("record.cfg", include_bytes!("../resource/cfgs/record.cfg")),
+            ("editor.cfg", include_bytes!("../resource/cfgs/editor.cfg")),
+            ("cam.cfg", include_bytes!("../resource/cfgs/cam.cfg")),
         ]
     };
 
@@ -120,17 +124,29 @@ where
         let path = path.join(&file_name);
 
         if path.is_file() {
-            info!("Config {file_name} already exists, skipping");
-        } else {
-            let mut file = File::create(&path)?;
-            file.write_all(cfg_file).with_context(|| {
-                format!(
-                    "Failed to write cfg file {} to {}",
-                    file_name,
-                    path.display()
-                )
-            })?;
+            match reset_cfgs {
+                Some(reset_cfgs) => {
+                    if !reset_cfgs.is_empty() && !reset_cfgs.contains(&file_name.to_string()) {
+                        info!("Config {file_name} already exists, skipping");
+                        continue;
+                    }
+                }
+                None => {
+                    info!("Config {file_name} already exists, skipping");
+                    continue;
+                }
+            }
         }
+
+        info!("Writing {file_name}");
+        let mut file = File::create(&path)?;
+        file.write_all(cfg_file).with_context(|| {
+            format!(
+                "Failed to write cfg file {} to {}",
+                file_name,
+                path.display()
+            )
+        })?;
     }
 
     Ok(())

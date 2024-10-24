@@ -47,7 +47,7 @@ pub enum Commands {
         project_name: String,
         #[clap(long, short)]
         game_name: Option<String>,
-        #[clap(long, conflicts_with = "no-init-git")]
+        #[clap(long, conflicts_with = "no_init_git")]
         init_git: bool,
         #[clap(long)]
         no_init_git: bool,
@@ -59,7 +59,7 @@ pub enum Commands {
         folder_name: String,
         #[clap(long, short)]
         game_name: Option<String>,
-        #[clap(long, conflicts_with = "no-init-git")]
+        #[clap(long, conflicts_with = "no_init_git")]
         init_git: bool,
         #[clap(long)]
         no_init_git: bool,
@@ -75,7 +75,7 @@ pub enum Commands {
     /// - Requires you to run from the project directory.
     RunGame {
         /// Runs multiple vanilla games.
-        #[clap(long, short, conflicts_with_all = &["sim", "vanilla-game", "record", "no-bxt", "run-script", "r-input"])]
+        #[clap(long, short, conflicts_with_all = &["sim", "vanilla_game", "record", "no_bxt", "run_script", "r_input"])]
         optim_games: Option<usize>,
         /// Detects if the game closed and restarts it.
         ///
@@ -83,7 +83,7 @@ pub enum Commands {
         #[clap(long, requires = "optim_games")]
         keep_alive: bool,
         /// Runs the simulator client.
-        #[clap(long, short, conflicts_with_all = &["low", "vanilla-game", "record", "width", "height", "no-bxt", "run-script"])]
+        #[clap(long, short, conflicts_with_all = &["low", "vanilla_game", "record", "width", "height", "no_bxt", "run_script"])]
         sim: bool,
         /// Runs the game with low quality settings.
         #[clap(long, short, conflicts_with = "record")]
@@ -92,7 +92,7 @@ pub enum Commands {
         #[clap(long, short, conflicts_with = "record")]
         vanilla_game: bool,
         /// Runs the game in high quality and 1080p resolution by default.
-        #[clap(long, conflicts_with = "no-bxt")]
+        #[clap(long, conflicts_with = "no_bxt")]
         record: bool,
         /// Sets the window width.
         #[clap(
@@ -100,7 +100,7 @@ pub enum Commands {
             default_value("1280"),
             default_value_if("sim", ArgPredicate::IsPresent, "100"),
             default_value_if("record", ArgPredicate::IsPresent, "1920"),
-            default_value_if("optim-games", ArgPredicate::IsPresent, "100")
+            default_value_if("optim_games", ArgPredicate::IsPresent, "100")
         )]
         width: u32,
         /// Sets the window height.
@@ -109,11 +109,11 @@ pub enum Commands {
             default_value("800"),
             default_value_if("sim", ArgPredicate::IsPresent, "100"),
             default_value_if("record", ArgPredicate::IsPresent, "1080"),
-            default_value_if("optim-games", ArgPredicate::IsPresent, "100")
+            default_value_if("optim_games", ArgPredicate::IsPresent, "100")
         )]
         height: u32,
         /// Runs the game without bxt.
-        #[clap(long, conflicts_with = "run-script")]
+        #[clap(long, conflicts_with = "run_script")]
         no_bxt: bool,
         /// The game will run a hltas script as it starts.
         ///

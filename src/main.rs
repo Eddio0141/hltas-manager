@@ -27,7 +27,7 @@ fn init_logger(cli: &Cli) {
 
     #[cfg(debug_assertions)]
     builder
-        .format_timestamp(None)
+        .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
         .filter_level(LevelFilter::Debug);
     #[cfg(not(debug_assertions))]
     builder

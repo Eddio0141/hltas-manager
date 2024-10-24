@@ -26,7 +26,6 @@ pub fn new(
     game_name: &Option<String>,
     init_git: bool,
     no_init_git: bool,
-    use_batch_scripts: bool,
 ) -> Result<()> {
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load(cfg)?;
@@ -40,13 +39,7 @@ pub fn new(
         fs::create_dir(&project_dir).context("Failed to create project folder")?;
     }
 
-    init_project(
-        project_dir,
-        game_name,
-        init_git,
-        no_init_git,
-        use_batch_scripts,
-    )
+    init_project(project_dir, game_name, init_git, no_init_git)
 }
 
 pub fn init(
@@ -54,7 +47,6 @@ pub fn init(
     game_name: &Option<String>,
     init_git: bool,
     no_init_git: bool,
-    use_batch_scripts: bool,
 ) -> Result<()> {
     let cfg = helper::cfg_dir()?;
     let cfg = Cfg::load(cfg)?;
@@ -66,13 +58,7 @@ pub fn init(
         bail!("Project folder does not exist, Help: Use 'new' to create a new project.");
     }
 
-    init_project(
-        project_dir,
-        game_name,
-        init_git,
-        no_init_git,
-        use_batch_scripts,
-    )
+    init_project(project_dir, game_name, init_git, no_init_git)
 }
 
 fn init_project<P>(
@@ -80,7 +66,6 @@ fn init_project<P>(
     game_name: &Option<String>,
     init_git: bool,
     no_init_git: bool,
-    use_batch_scripts: bool,
 ) -> Result<()>
 where
     P: AsRef<Path>,
@@ -118,7 +103,9 @@ where
 
     // copy game dir
     // will only copy if it doesn't exist
-    copy_game_dir(&second_game_dir, &game_dir, &project_dir)?;
+    if let Some(second_game_dir) = second_game_dir.as_ref() {
+        copy_game_dir(second_game_dir, &game_dir)?;
+    }
 
     // override userconfig.cfg
     override_userconfig(&game_dir, &second_game_dir)?;
@@ -135,63 +122,6 @@ where
 
     if init_git {
         set_up_git(&project_dir, &cfg)?;
-    }
-
-    // create scripts to run manager with subcommand
-    create_manager_scripts(&project_dir, use_batch_scripts)?;
-
-    Ok(())
-}
-
-fn create_manager_scripts<P>(project_dir: P, use_batch_scripts: bool) -> Result<()>
-where
-    P: AsRef<Path>,
-{
-    let project_dir = project_dir.as_ref();
-
-    let fail_message = |script_name: &str| format!("Failed to create {script_name} script");
-
-    // TODO probably remove batch scripts
-    if use_batch_scripts {
-        info!("Creating batch scripts...");
-
-        // manager
-        files::write_manager_script_bat(
-            project_dir.join(format!("{}.bat", crate::NAME)),
-            None,
-            true,
-        )
-        .context("Failed to create manager script")?;
-
-        // run-game
-        files::write_manager_script_bat(project_dir.join("run_game.bat"), Some("run-game"), false)
-            .context(fail_message("run_game.bat"))?;
-
-        // link files
-        files::write_manager_script_bat(
-            project_dir.join("link_files.bat"),
-            Some("link-hltas"),
-            false,
-        )
-        .context(fail_message("link_files.bat"))?;
-    } else {
-        info!("Creating powershell scripts...");
-
-        // manager
-        files::write_manager_script(project_dir.join(format!("{}.ps1", crate::NAME)), None, true)
-            .context("Failed to create manager script")?;
-
-        // run-game
-        files::write_manager_script(project_dir.join("run_game.ps1"), Some("run-game"), false)
-            .context(fail_message("run_game.ps1"))?;
-
-        // link files
-        files::write_manager_script(
-            project_dir.join("link_hltas.ps1"),
-            Some("link-hltas"),
-            false,
-        )
-        .context(fail_message("link_hltas.ps1"))?;
     }
 
     Ok(())
@@ -239,52 +169,37 @@ where
     Ok(())
 }
 
-fn copy_game_dir<P, P2, P3>(
-    second_game_dir: &Option<P>,
-    game_dir: P2,
-    project_dir: P3,
-) -> Result<()>
+fn copy_game_dir<P, P2>(second_game_dir: P, game_dir: P2) -> Result<()>
 where
     P: AsRef<Path>,
     P2: AsRef<Path>,
-    P3: AsRef<Path>,
 {
-    match second_game_dir {
-        Some(second_game_dir) => {
-            let second_game_dir = second_game_dir.as_ref();
-            info!("Copying game directory to second client...");
-            let copy_options = CopyOptions {
-                skip_exist: true,
-                copy_inside: true,
-                ..Default::default()
-            };
+    let second_game_dir = second_game_dir.as_ref();
+    info!("Copying game directory to second client...");
+    let copy_options = CopyOptions {
+        skip_exist: true,
+        copy_inside: true,
+        ..Default::default()
+    };
 
-            fs_extra::dir::copy(&game_dir, &second_game_dir, &copy_options).with_context(|| {
-                format!(
-                    "Failed to copy game dir from {} to {}",
-                    game_dir.as_ref().display(),
-                    second_game_dir.display()
-                )
-            })?;
+    fs_extra::dir::copy(&game_dir, second_game_dir, &copy_options).with_context(|| {
+        format!(
+            "Failed to copy game dir from {} to {}",
+            game_dir.as_ref().display(),
+            second_game_dir.display()
+        )
+    })?;
 
-            // remove client.dll if it exists unless default game
-            if let Some(game_name) = game_dir.as_ref().file_name() {
-                if game_name.to_string_lossy() == DEFAULT_GAME {
-                    info!("Copying game is the default game, skipping removal of client.dll");
-                } else {
-                    info!("Removing client.dll from second client...");
-                    let second_game_client_dll = second_game_dir.join("cl_dlls").join("client.dll");
-                    if second_game_client_dll.is_file() {
-                        fs::remove_file(second_game_client_dll)
-                            .context("Failed to remove client.dll")?;
-                    }
-                }
+    // remove client.dll if it exists unless default game
+    if let Some(game_name) = game_dir.as_ref().file_name() {
+        if game_name.to_string_lossy() == DEFAULT_GAME {
+            info!("Copying game is the default game, skipping removal of client.dll");
+        } else {
+            info!("Removing client.dll from second client...");
+            let second_game_client_dll = second_game_dir.join("cl_dlls").join("client.dll");
+            if second_game_client_dll.is_file() {
+                fs::remove_file(second_game_client_dll).context("Failed to remove client.dll")?;
             }
-        }
-        None => {
-            // generate toggle sim client batch files
-            info!("Generating toggle sim client scripts...");
-            files::write_toggle_vanilla_game(&project_dir, &game_dir)?;
         }
     }
 
@@ -366,7 +281,7 @@ where
     } else {
         info!("Setting up git repository...");
         process::Command::new("git")
-        .current_dir(&project_dir)
+        .current_dir(project_dir)
         .arg("init")
         .output()
         .context("Failed to init git\nHelp: Use '--no-init-git' to skip git init\nNote: This process failing could be due to git not being installed")?;

@@ -149,7 +149,7 @@ pub fn install(override_: Override) -> Result<()> {
         info!("Copying simulator client dll to the second half-life directory");
         fs::copy(
             &base_sim_client_dll_path,
-            &no_client_dll_dir.join(steam_api_dll),
+            no_client_dll_dir.join(steam_api_dll),
         )
         .context("Failed to copy simulator dll to the second half-life directory")?;
     }
@@ -250,19 +250,19 @@ where
     if !config_path.is_file() {
         // create the config file
         info!("Creating config file...");
-        Cfg::save_default_to_path(&config_path).with_context(|| {
+        Cfg::save_default_to_path(config_path).with_context(|| {
             format!("Failed to create config file at {}", config_path.display())
         })?;
         info!("Created default config file");
     }
 
     // load config
-    let mut cfg = match Cfg::load(&config_path) {
+    let mut cfg = match Cfg::load(config_path) {
         Ok(cfg) => cfg,
         Err(_) => {
             // attempt to save default config to fix the problem
-            Cfg::save_default_to_path(&config_path)?;
-            let cfg = Cfg::load(&config_path)?;
+            Cfg::save_default_to_path(config_path)?;
+            let cfg = Cfg::load(config_path)?;
 
             warn!("Couldn't load config file, saved default config file");
 
@@ -284,7 +284,7 @@ where
 
     // save config
     if overridden_cfg {
-        cfg.save(&config_path)?;
+        cfg.save(config_path)?;
     }
 
     Ok(cfg)

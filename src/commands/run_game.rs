@@ -1,24 +1,23 @@
 use std::{
     env::current_dir,
+    ffi::OsStr,
     path::Path,
-    process::{self, Child, Output, Stdio},
+    process::{self, Output},
     thread,
     time::Duration,
 };
 
 use anyhow::{bail, Context, Result};
 use log::{debug, error, info, warn};
-use sysinfo::{ProcessRefreshKind, RefreshKind, System, SystemExt};
+use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
 use crate::{
     cfg::{self, Cfg},
-    helper,
     project_toml::{self, ProjectToml},
 };
 
 pub struct RunGameMiscFlags {
     pub r_input: bool,
-    pub no_tas_view: bool,
 }
 
 pub struct RunGameFlags<'a> {
@@ -44,10 +43,7 @@ pub fn run_game(
     run_game_flags: RunGameFlags,
     run_game_bxt_flags: RunGameBxtFlags,
 ) -> Result<()> {
-    let RunGameMiscFlags {
-        r_input,
-        no_tas_view,
-    } = run_game_misc_flags;
+    let RunGameMiscFlags { r_input } = run_game_misc_flags;
 
     let current_dir_fail = "Failed to get current directory";
 
@@ -93,7 +89,6 @@ pub fn run_game(
     };
 
     let r_input_exe = root_dir.join("RInput").join("RInput.exe");
-    let tas_view_dir = root_dir.join("TASView");
 
     info!("Running game...");
     run_hl(
@@ -107,9 +102,6 @@ pub fn run_game(
     if r_input {
         info!("Running RInput...");
         run_r_input(r_input_exe)?;
-    }
-    if !(no_tas_view || run_game_bxt_flags.sim || run_game_bxt_flags.optim_games.is_some()) {
-        run_tas_view(tas_view_dir)?;
     }
 
     Ok(())
@@ -128,49 +120,6 @@ where
             .context("Failed to run RInput")?;
 
         Ok(Some(output))
-    } else {
-        Ok(None)
-    }
-}
-
-fn run_tas_view<P>(tas_view_dir: P) -> Result<Option<Child>>
-where
-    P: AsRef<Path>,
-{
-    let tas_view_dir = tas_view_dir.as_ref();
-    let tas_view_exe = tas_view_dir.join("TASView.exe");
-
-    if tas_view_exe.is_file() {
-        // only run if TASView.exe isn't already running
-        let sys = System::new_with_specifics(
-            RefreshKind::new().with_processes(ProcessRefreshKind::new().with_disk_usage()),
-        );
-
-        let handle = if sys.processes_by_exact_name("TASView.exe").next().is_none() {
-            info!("Starting TASView...");
-
-            // we completely ignore the output of TASView.exe
-            let handle = process::Command::new(tas_view_exe)
-                .current_dir(tas_view_dir)
-                .stderr(Stdio::null())
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .spawn()
-                .context("Failed to run TASView")?;
-
-            helper::wait_for_process_start("TASView.exe", Duration::from_secs(5))
-                .context("TASView failed to start in time")?;
-            thread::sleep(Duration::from_millis(100));
-
-            Some(handle)
-        } else {
-            None
-        };
-
-        // move window
-        helper::move_window_to_pos(-8, 350, "TASView")?;
-
-        Ok(handle)
     } else {
         Ok(None)
     }
@@ -304,8 +253,13 @@ where
                     }
                 };
                 let hl_exe_count = |system: &mut System| {
-                    system.refresh_processes_specifics(ProcessRefreshKind::new().with_cpu());
-                    system.processes_by_exact_name("hl.exe").count()
+                    // TODO: track pids instead
+                    system.refresh_processes_specifics(
+                        ProcessesToUpdate::All,
+                        true,
+                        ProcessRefreshKind::new().with_cpu(),
+                    );
+                    system.processes_by_exact_name(OsStr::new("hl.exe")).count()
                 };
 
                 let mut system = System::new();
@@ -321,7 +275,12 @@ where
 
                 if *keep_alive {
                     loop {
-                        system.refresh_processes_specifics(ProcessRefreshKind::new().with_cpu());
+                        // TODO: track pids instead
+                        system.refresh_processes_specifics(
+                            ProcessesToUpdate::All,
+                            true,
+                            ProcessRefreshKind::new().with_cpu(),
+                        );
 
                         // scan for hl.exe processes
                         let current_lives = hl_exe_count(&mut system);

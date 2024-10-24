@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use builder::ArgPredicate;
 use clap::*;
 
 #[derive(Parser, Debug)]
@@ -9,9 +10,6 @@ pub struct Cli {
     /// Runs the command with no output.
     #[clap(long)]
     pub quiet: bool,
-    /// Runs the command with no colour.
-    #[clap(long)]
-    pub no_colour: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -39,7 +37,7 @@ pub enum Commands {
         /// - If the flag is set without any values, it will reset all cfgs.
         /// - You can specify which cfgs to reset by passing a list of full cfg names.
         /// - Example: `reset_cfgs=ingame.cfg record.cfg hltas.cfg`
-        #[clap(long, min_values = 0)]
+        #[clap(long)]
         reset_cfgs: Option<Vec<String>>,
     },
     /// Create a new project.
@@ -53,8 +51,6 @@ pub enum Commands {
         init_git: bool,
         #[clap(long)]
         no_init_git: bool,
-        #[clap(long)]
-        use_batch_scripts: bool,
     },
     /// Initializes a new project in an existing directory.
     ///
@@ -67,8 +63,6 @@ pub enum Commands {
         init_git: bool,
         #[clap(long)]
         no_init_git: bool,
-        #[clap(long)]
-        use_batch_scripts: bool,
     },
     /// Lists all available games.
     ///
@@ -81,7 +75,7 @@ pub enum Commands {
     /// - Requires you to run from the project directory.
     RunGame {
         /// Runs multiple vanilla games.
-        #[clap(long, short, conflicts_with_all = &["sim", "vanilla-game", "record", "no-bxt", "run-script", "r-input", "no-tas-view"])]
+        #[clap(long, short, conflicts_with_all = &["sim", "vanilla-game", "record", "no-bxt", "run-script", "r-input"])]
         optim_games: Option<usize>,
         /// Detects if the game closed and restarts it.
         ///
@@ -104,18 +98,18 @@ pub enum Commands {
         #[clap(
             long,
             default_value("1280"),
-            default_value_if("sim", None, Some("100")),
-            default_value_if("record", None, Some("1920")),
-            default_value_if("optim-games", None, Some("100"))
+            default_value_if("sim", ArgPredicate::IsPresent, "100"),
+            default_value_if("record", ArgPredicate::IsPresent, "1920"),
+            default_value_if("optim-games", ArgPredicate::IsPresent, "100")
         )]
         width: u32,
         /// Sets the window height.
         #[clap(
             long,
             default_value("800"),
-            default_value_if("sim", None, Some("100")),
-            default_value_if("record", None, Some("1080")),
-            default_value_if("optim-games", None, Some("100"))
+            default_value_if("sim", ArgPredicate::IsPresent, "100"),
+            default_value_if("record", ArgPredicate::IsPresent, "1080"),
+            default_value_if("optim-games", ArgPredicate::IsPresent, "100")
         )]
         height: u32,
         /// Runs the game without bxt.
@@ -132,9 +126,6 @@ pub enum Commands {
         /// If using r-input.
         #[clap(long)]
         r_input: bool,
-        /// If disabling TASView.
-        #[clap(long)]
-        no_tas_view: bool,
         /// Overrides the game to launch over project config.
         #[clap(long, short)]
         game_override: Option<String>,

@@ -47,15 +47,8 @@ pub fn run(cli: Cli) -> Result<()> {
             game_name,
             init_git,
             no_init_git,
-            use_batch_scripts,
         } => {
-            new(
-                project_name,
-                game_name,
-                *init_git,
-                *no_init_git,
-                *use_batch_scripts,
-            )?;
+            new(project_name, game_name, *init_git, *no_init_git)?;
             info!("Created project!");
         }
         Commands::Init {
@@ -63,15 +56,8 @@ pub fn run(cli: Cli) -> Result<()> {
             game_name,
             init_git,
             no_init_git,
-            use_batch_scripts,
         } => {
-            init(
-                folder_name,
-                game_name,
-                *init_git,
-                *no_init_git,
-                *use_batch_scripts,
-            )?;
+            init(folder_name, game_name, *init_git, *no_init_git)?;
             info!("Initialized project!");
         }
         Commands::Games => {
@@ -95,16 +81,12 @@ pub fn run(cli: Cli) -> Result<()> {
             script: run_script,
             params,
             r_input,
-            no_tas_view,
             game_override,
             optim_games,
             keep_alive,
         } => {
             run_game(
-                RunGameMiscFlags {
-                    r_input: *r_input,
-                    no_tas_view: *no_tas_view,
-                },
+                RunGameMiscFlags { r_input: *r_input },
                 RunGameFlags {
                     low: *low,
                     vanilla_game: *vanilla_game,

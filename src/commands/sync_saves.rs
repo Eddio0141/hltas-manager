@@ -12,9 +12,7 @@ use std::{
 };
 
 pub fn sync_saves(keep_alive: bool) -> Result<()> {
-    let root_dir = helper::try_root_dir()
-        .context("Failed to get root dir")?
-        .path;
+    let root_dir = helper::try_root_dir().context("Failed to get root dir")?;
     // load config
     let config_path = root_dir.join(cfg::cfg_file_name());
     let config = Cfg::load(config_path).context("Failed to load config")?;
@@ -31,7 +29,7 @@ pub fn sync_saves(keep_alive: bool) -> Result<()> {
 
     if keep_alive {
         loop {
-            sync_saves_once(&save, &half_life_dir, &half_life_second_dir)?;
+            sync_saves_once(save, &half_life_dir, &half_life_second_dir)?;
             std::thread::sleep(Duration::from_secs(1));
         }
     } else {
@@ -52,7 +50,7 @@ pub fn sync_saves_once<S: AsRef<Path>, P: AsRef<Path>, P2: AsRef<Path>>(
 
     // we only do the copies for the games in second game dir
     let games =
-        game_dir_types(&half_life_second_dir).context("Failed to get games from second dir")?;
+        game_dir_types(half_life_second_dir).context("Failed to get games from second dir")?;
 
     for game in games {
         let first_dir_saves_dir = half_life_dir.join(&game.name).join(&saves_dir);

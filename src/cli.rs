@@ -75,7 +75,7 @@ pub enum Commands {
     /// - Requires you to run from the project directory.
     RunGame {
         /// Runs multiple vanilla games.
-        #[clap(long, short, conflicts_with_all = &["sim", "vanilla_game", "record", "no_bxt", "run_script", "r_input"])]
+        #[clap(long, short, conflicts_with_all = &["sim", "vanilla_game", "record", "no_bxt", "r_input"])]
         optim_games: Option<usize>,
         /// Detects if the game closed and restarts it.
         ///
@@ -83,7 +83,7 @@ pub enum Commands {
         #[clap(long, requires = "optim_games")]
         keep_alive: bool,
         /// Runs the simulator client.
-        #[clap(long, short, conflicts_with_all = &["low", "vanilla_game", "record", "width", "height", "no_bxt", "run_script"])]
+        #[clap(long, short, conflicts_with_all = &["low", "vanilla_game", "record", "width", "height", "no_bxt"])]
         sim: bool,
         /// Runs the game with low quality settings.
         #[clap(long, short, conflicts_with = "record")]
@@ -113,7 +113,7 @@ pub enum Commands {
         )]
         height: u32,
         /// Runs the game without bxt.
-        #[clap(long, conflicts_with = "run_script")]
+        #[clap(long)]
         no_bxt: bool,
         /// The game will run a hltas script as it starts.
         ///

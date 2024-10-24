@@ -1,5 +1,5 @@
 use std::{
-    env::current_dir,
+    env::{current_dir, current_exe},
     ffi::OsStr,
     path::Path,
     process::{self, Output},
@@ -47,35 +47,26 @@ pub fn run_game(
 
     let current_dir_fail = "Failed to get current directory";
 
-    let (project_dir, root_dir, cfg) = {
+    let root_dir = current_exe()
+        .expect("failed to get current executable path")
+        .parent()
+        .expect("failed to get current executable directory")
+        .to_path_buf();
+
+    let cfg_dir = root_dir.join(cfg::cfg_file_name());
+
+    info!("Loading config...");
+    let cfg = Cfg::load(&cfg_dir)
+        .with_context(|| format!("Failed to load config from `{}`", cfg_dir.display()))?;
+
+    let project_dir = {
         let current_dir = current_dir().context(current_dir_fail)?;
         let project_toml = current_dir.join(project_toml::FILE_NAME);
 
         if project_toml.is_file() {
-            let project_dir = current_dir;
-            let projects_dir = project_dir
-                .parent()
-                .context("Failed to get tas dir")?
-                .to_path_buf();
-            let root_dir = projects_dir
-                .parent()
-                .context("Failed to get root dir")?
-                .to_path_buf();
-            let cfg_dir = root_dir.join(cfg::cfg_file_name());
-
-            info!("Loading config...");
-            let cfg = Cfg::load(&cfg_dir).context("Failed to load config")?;
-
-            (Some(project_dir), root_dir, cfg)
+            Some(current_dir)
         } else {
-            // assume we are in root dir
-            let root_dir = current_dir;
-            let cfg_dir = root_dir.join(cfg::cfg_file_name());
-
-            info!("Loading config...");
-            let cfg = Cfg::load(&cfg_dir).context("Failed to load config")?;
-
-            (None, root_dir, cfg)
+            None
         }
     };
 
@@ -164,6 +155,8 @@ where
         }
     };
     let hl_exe = hl_dir.join("hl.exe");
+    #[cfg(target_os = "linux")]
+    let wine_exe = OsStr::new("wine");
     let game = match game_override {
         Some(game_override) => game_override,
         None => match project_toml {
@@ -225,6 +218,13 @@ where
         // just run hl.exe
         // no_bxt conflicts with optim_games so no need to run multiple times here
         Some(
+            #[cfg(target_os = "linux")]
+            process::Command::new(wine_exe)
+                .arg(hl_exe)
+                .args(params)
+                .current_dir(hl_dir)
+                .output(),
+            #[cfg(target_os = "windows")]
             process::Command::new(hl_exe)
                 .args(params)
                 .current_dir(hl_dir)
@@ -234,6 +234,14 @@ where
         match optim_games {
             Some(optim_games) => {
                 let run_game = |out_of, total_games| {
+                    #[cfg(target_os = "linux")]
+                    let bxt_result = process::Command::new(wine_exe)
+                        .arg(&injector_exe)
+                        .arg(&hl_exe)
+                        .args(&params)
+                        .current_dir(&hl_dir)
+                        .output();
+                    #[cfg(target_os = "windows")]
                     let bxt_result = process::Command::new(&injector_exe)
                         .arg(&hl_exe)
                         .args(&params)
@@ -309,6 +317,13 @@ where
             }
             None => {
                 // run injector with hl.exe as an extra argument
+                #[cfg(target_os = "linux")]
+                let mut cmd = process::Command::new(wine_exe);
+                #[cfg(target_os = "linux")]
+                {
+                    cmd.arg(injector_exe);
+                }
+                #[cfg(target_os = "windows")]
                 let mut cmd = process::Command::new(injector_exe);
 
                 if let Some(run_script) = run_script {
@@ -324,7 +339,7 @@ where
 
     // TODO INFO: HL output: Some(Ok(Output { status: ExitStatus(ExitStatus(1)), stdout: "", stderr: "E\0r\0r\0o\0r\0...
     // this error can't be picked up, sort it out
-    //info!("HL output: {:?}", output);
+    info!("HL output: {:?}", output);
 
     match output {
         Some(output) => Ok(Some(output.context("Failed to run Half-Life")?)),

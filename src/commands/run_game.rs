@@ -222,11 +222,13 @@ where
             process::Command::new(wine_exe)
                 .arg(hl_exe)
                 .args(params)
+                .envs(std::env::vars())
                 .current_dir(hl_dir)
                 .output(),
             #[cfg(target_os = "windows")]
             process::Command::new(hl_exe)
                 .args(params)
+                .envs(std::env::vars())
                 .current_dir(hl_dir)
                 .output(),
         )
@@ -240,12 +242,14 @@ where
                         .arg(&hl_exe)
                         .args(&params)
                         .current_dir(&hl_dir)
+                        .envs(std::env::vars())
                         .output();
                     #[cfg(target_os = "windows")]
                     let bxt_result = process::Command::new(&injector_exe)
                         .arg(&hl_exe)
                         .args(&params)
                         .current_dir(&hl_dir)
+                        .envs(std::env::vars())
                         .output();
 
                     match bxt_result {
@@ -330,7 +334,10 @@ where
                     cmd.env("BXT_SCRIPT", run_script);
                 }
 
-                cmd.arg(hl_exe).args(params).current_dir(hl_dir);
+                cmd.arg(hl_exe)
+                    .args(params)
+                    .current_dir(hl_dir)
+                    .envs(std::env::vars());
 
                 Some(cmd.output())
             }

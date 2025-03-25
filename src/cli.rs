@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use builder::ArgPredicate;
 use clap::*;
 
 #[derive(Parser, Debug)]
@@ -97,19 +96,21 @@ pub enum Commands {
         /// Sets the window width.
         #[clap(
             long,
-            default_value("1280"),
-            default_value_if("sim", ArgPredicate::IsPresent, "100"),
-            default_value_if("record", ArgPredicate::IsPresent, "1920"),
-            default_value_if("optim_games", ArgPredicate::IsPresent, "100")
+            default_value_t = 1280,
+            // TODO: https://github.com/clap-rs/clap/issues/4904
+            default_value_if("sim", "true", "100"),
+            default_value_if("record", "true", "1920"),
+            default_value_if("optim_games", "true", "100")
         )]
         width: u32,
         /// Sets the window height.
         #[clap(
             long,
-            default_value("800"),
-            default_value_if("sim", ArgPredicate::IsPresent, "100"),
-            default_value_if("record", ArgPredicate::IsPresent, "1080"),
-            default_value_if("optim_games", ArgPredicate::IsPresent, "100")
+            default_value_t = 800,
+            // TODO: https://github.com/clap-rs/clap/issues/4904
+            default_value_if("sim", "true", "100"),
+            default_value_if("record", "true", "1080"),
+            default_value_if("optim_games", "true", "100")
         )]
         height: u32,
         /// Runs the game without bxt.

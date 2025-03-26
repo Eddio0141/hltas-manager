@@ -1,3 +1,4 @@
+use core::str;
 use std::{
     env::{current_dir, current_exe},
     ffi::OsStr,
@@ -82,13 +83,22 @@ pub fn run_game(
     let r_input_exe = root_dir.join("RInput").join("RInput.exe");
 
     info!("Running game...");
-    run_hl(
+    let output = run_hl(
         root_dir,
         &cfg,
         &project_toml,
         &run_game_flags,
         &run_game_bxt_flags,
     )?;
+
+    if let Some(output) = output {
+        info!(
+            "HL process exit, exit status {}, stdout:\n{}\nstderr:\n{}",
+            output.status,
+            str::from_utf8(&output.stdout).unwrap_or("invalid stdout"),
+            str::from_utf8(&output.stderr).unwrap_or("invalid stderr"),
+        );
+    }
 
     if r_input {
         info!("Running RInput...");
@@ -343,10 +353,6 @@ where
             }
         }
     };
-
-    // TODO INFO: HL output: Some(Ok(Output { status: ExitStatus(ExitStatus(1)), stdout: "", stderr: "E\0r\0r\0o\0r\0...
-    // this error can't be picked up, sort it out
-    info!("HL output: {:?}", output);
 
     match output {
         Some(output) => Ok(Some(output.context("Failed to run Half-Life")?)),
